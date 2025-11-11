@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "195600237726",
+    "project_id": "medihouse-9deb2",
+    "storage_bucket": "medihouse-9deb2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:195600237726:android:b8ecde16e394b37f9d278f",
+        "android_client_info": {
+          "package_name": "com.example.medi_house"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAMsiowc4rAwlQ0nfm_gbqz_4-LLGeyyFE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
