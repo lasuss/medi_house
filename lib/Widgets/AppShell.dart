@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medi_house/menus/bottom_navigation.dart';
-class Appshell extends StatefulWidget {
+class AppShell extends StatefulWidget {
   final int currentIndex;
   final Widget child;
 
-  const Appshell({
+  const AppShell({
     super.key,
     required this.currentIndex,
     required this.child,
   });
 
   @override
-  State<Appshell> createState() => _AppshellState();
+  State<AppShell> createState() => _AppShellState();
 }
 
-class _AppshellState extends State<Appshell> {
+class _AppShellState extends State<AppShell> {
   String _getTitle(int currentIndex) {
     switch (currentIndex) {
       case 0:
@@ -44,7 +44,7 @@ class _AppshellState extends State<Appshell> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
-        backgroundColor: Colors.blue[700],
+        backgroundColor: Colors.blue[900],
         elevation: 0,
         // The leading icon (drawer menu) is hidden on auth screens.
         // An automatic back button will appear if possible (e.g., navigating from Login to Register).
