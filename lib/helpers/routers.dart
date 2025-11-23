@@ -1,36 +1,121 @@
+
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medi_house/Widgets/AppShell.dart';
 import 'package:medi_house/Widgets/login.dart';
 import 'package:medi_house/Widgets/register.dart';
-import 'package:medi_house/menus/bottom_navigation.dart';
-import 'package:flutter/material.dart';
+
+// Admin Widgets
+import 'package:medi_house/Widgets/admin/AdminDashboard.dart';
+
+// Doctor Widgets
+import 'package:medi_house/Widgets/doctor/DoctorDashboard.dart';
+import 'package:medi_house/Widgets/doctor/DoctorMessages.dart';
+import 'package:medi_house/Widgets/doctor/DoctorNotification.dart';
+import 'package:medi_house/Widgets/doctor/DoctorProfile.dart';
+import 'package:medi_house/Widgets/doctor/DoctorRecordDetail.dart';
+import 'package:medi_house/Widgets/doctor/DoctorScanQR.dart';
+import 'package:medi_house/Widgets/doctor/DoctorSchedule.dart';
+
+// Patient Widgets
+import 'package:medi_house/Widgets/patient/PatientAddRecord.dart';
+import 'package:medi_house/Widgets/patient/PatientAppointment.dart';
+import 'package:medi_house/Widgets/patient/PatientDashboard.dart';
+import 'package:medi_house/Widgets/patient/PatientMessages.dart';
+import 'package:medi_house/Widgets/patient/PatientNotification.dart';
+import 'package:medi_house/Widgets/patient/PatientPersonalizeNotification.dart';
+import 'package:medi_house/Widgets/patient/PatientProfile.dart';
+import 'package:medi_house/Widgets/patient/PatientRecordDetail.dart';
+import 'package:medi_house/Widgets/patient/PatientScanNationalID.dart';
+import 'package:medi_house/Widgets/patient/PatientShowQR.dart';
+
+// Pharmacy Widgets
+import 'package:medi_house/Widgets/pharmacy/PharmacyFilled.dart';
+import 'package:medi_house/Widgets/pharmacy/PharmacyInventory.dart';
+import 'package:medi_house/Widgets/pharmacy/PharmacyPending.dart';
 
 class MediRouter {
   static final GoRouter router = GoRouter(
-    initialLocation: '/profile', // Start at the login screen
+    initialLocation: '/login', // Start at the login screen
     routes: [
-      // A single ShellRoute wraps all pages that should display within the AppShell frame.
+      // =======================================================================
+      // Routes that DO NOT have the main AppShell (e.g., login, register)
+      // =======================================================================
+      GoRoute(
+        path: '/login',
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const LoginPage(title: 'Đăng nhập'),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(
+                opacity: CurveTween(curve: Curves.easeInOutCirc).animate(animation),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+      GoRoute(
+        path: '/register',
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            // This uses the RegisterPage created in lib/pages/
+            child: const RegisterPage(title: 'Đăng ký'),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(
+                opacity: CurveTween(curve: Curves.easeInOutCirc).animate(animation),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      // =======================================================================
+      // A single ShellRoute wraps all pages that should display with the
+      // bottom navigation bar within the AppShell.
+      // =======================================================================
       ShellRoute(
         pageBuilder: (context, state, child) {
           final String location = state.uri.toString();
-          int currentIndex;
+          int currentIndex = 0; // Default index
 
-          // Determine the currentIndex based on the route. This index is used
-          // by the AppShell to configure the AppBar title and BottomNavBar.
-          if (location.startsWith('/home')) {
+          // This logic determines which tab is active in the BottomNavigationBar
+          // based on the current URL.
+          
+          // Patient Routes
+          if (location.startsWith('/patient/dashboard')) {
             currentIndex = 0;
-          } else if (location.startsWith('/notifications')) {
+          } else if (location.startsWith('/patient/appointments')) {
             currentIndex = 1;
-          } else if (location.startsWith('/checkin')) {
+          } else if (location.startsWith('/patient/messages')) {
             currentIndex = 2;
-          } else if (location.startsWith('/profile')) {
+          } else if (location.startsWith('/patient/profile')) {
             currentIndex = 3;
-          } else if (location.startsWith('/login')) {
-            currentIndex = 4; // Special index for Login
-          } else if (location.startsWith('/register')) {
-            currentIndex = 5; // Special index for Register
-          } else {
-            currentIndex = 0; // Default to home
+          }
+          // Doctor Routes
+          else if (location.startsWith('/doctor/dashboard')) {
+            currentIndex = 0;
+          } else if (location.startsWith('/doctor/schedule')) {
+            currentIndex = 1;
+          } else if (location.startsWith('/doctor/messages')) {
+            currentIndex = 2;
+          } else if (location.startsWith('/doctor/profile')) {
+            currentIndex = 3;
+          }
+          // Pharmacy Routes
+          else if (location.startsWith('/pharmacy/pending')) {
+            currentIndex = 0;
+          } else if (location.startsWith('/pharmacy/filled')) {
+            currentIndex = 1;
+          } else if (location.startsWith('/pharmacy/inventory')) {
+            currentIndex = 2;
+          }
+          // Admin Routes
+          else if (location.startsWith('/admin/dashboard')) {
+            currentIndex = 0;
           }
 
           return NoTransitionPage(
@@ -41,67 +126,121 @@ class MediRouter {
           );
         },
         routes: [
+          // --- Patient Routes ---
           GoRoute(
-            path: '/home',
-            pageBuilder: (context, state) =>
-            const NoTransitionPage(child: LoginPage(title: 'title')),
+            path: '/patient/dashboard',
+            pageBuilder: (context, state) => const NoTransitionPage(child: PatientDashboard()),
           ),
           GoRoute(
-            path: '/notifications',
-            pageBuilder: (context, state) =>
-            const NoTransitionPage(child: LoginPage(title: 'title')),
+            path: '/patient/appointments',
+            pageBuilder: (context, state) => const NoTransitionPage(child: PatientAppointment()),
           ),
           GoRoute(
-            path: '/checkin',
-            pageBuilder: (context, state) =>
-            const NoTransitionPage(child: LoginPage(title: 'title')),
+            path: '/patient/messages',
+            pageBuilder: (context, state) => const NoTransitionPage(child: PatientMessages()),
           ),
           GoRoute(
-            path: '/profile',
-            pageBuilder: (context, state) =>
-            const NoTransitionPage(child: LoginPage(title: 'Tài khoản')),
+            path: '/patient/profile',
+            pageBuilder: (context, state) => const NoTransitionPage(child: PatientProfile()),
           ),
           GoRoute(
-            path: '/login',
-            pageBuilder: (context, state) {
-              return CustomTransitionPage<void>(
-                key: state.pageKey,
-                child: const LoginPage(title: 'Đăng nhập'),
-                transitionsBuilder:
-                    (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(
-                    opacity: CurveTween(curve: Curves.easeInOutCirc)
-                        .animate(animation),
-                    child: child,
-                  );
-                },
-              );
-            },
+            path: '/patient/notifications',
+            pageBuilder: (context, state) => const NoTransitionPage(child: PatientNotification()),
+          ),
+
+          // --- Doctor Routes ---
+          GoRoute(
+            path: '/doctor/dashboard',
+            pageBuilder: (context, state) => const NoTransitionPage(child: DoctorDashboard()),
           ),
           GoRoute(
-            path: '/register',
-            pageBuilder: (context, state) {
-              return CustomTransitionPage<void>(
-                key: state.pageKey,
-                child: const RegisterPage(title: 'Đăng ký'),
-                transitionsBuilder:
-                    (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(
-                    opacity: CurveTween(curve: Curves.easeInOutCirc)
-                        .animate(animation),
-                    child: child,
-                  );
-                },
-              );
-            },
+            path: '/doctor/schedule',
+            pageBuilder: (context, state) => const NoTransitionPage(child: DoctorSchedule()),
+          ),
+          GoRoute(
+            path: '/doctor/messages',
+            pageBuilder: (context, state) => const NoTransitionPage(child: DoctorMessages()),
+          ),
+          GoRoute(
+            path: '/doctor/profile',
+            pageBuilder: (context, state) => const NoTransitionPage(child: DoctorProfile()),
+          ),
+          GoRoute(
+            path: '/doctor/notifications',
+            pageBuilder: (context, state) => const NoTransitionPage(child: DoctorNotification()),
+          ),
+
+          // --- Pharmacy Routes ---
+          GoRoute(
+            path: '/pharmacy/pending',
+            pageBuilder: (context, state) => const NoTransitionPage(child: PharmacyPending()),
+          ),
+          GoRoute(
+            path: '/pharmacy/filled',
+            pageBuilder: (context, state) => const NoTransitionPage(child: PharmacyFilled()),
+          ),
+          GoRoute(
+            path: '/pharmacy/inventory',
+            pageBuilder: (context, state) => const NoTransitionPage(child: PharmacyInventory()),
+          ),
+
+          // --- Admin Routes ---
+          GoRoute(
+            path: '/admin/dashboard',
+            pageBuilder: (context, state) => const NoTransitionPage(child: AdminDashboard()),
           ),
         ],
       ),
+
+      // =======================================================================
+      // Detail pages or pages that are pushed on top of the shell
+      // =======================================================================
+      GoRoute(
+        path: '/patient/records/add',
+        pageBuilder: (context, state) => const MaterialPage(child: PatientAddRecord(), fullscreenDialog: true),
+      ),
+      GoRoute(
+        path: '/patient/records/:id',
+        pageBuilder: (context, state) => MaterialPage(child: PatientRecordDetail(title: 'Record ${state.pathParameters[''''id''']}')),
+      ),
+      GoRoute(
+        path: '/doctor/records/:id',
+        pageBuilder: (context, state) => MaterialPage(child: DoctorRecordDetail(title: 'Record ${state.pathParameters[''''id''']}')),
+      ),
+       GoRoute(
+        path: '/patient/scan_id',
+        pageBuilder: (context, state) => const MaterialPage(child: PatientScanNationalID(), fullscreenDialog: true),
+      ),
+       GoRoute(
+        path: '/patient/show_qr',
+        pageBuilder: (context, state) => const MaterialPage(child: PatientShowQR(), fullscreenDialog: true),
+      ),
+      GoRoute(
+        path: '/doctor/scan_qr',
+        pageBuilder: (context, state) => const MaterialPage(child: DoctorScanQR(), fullscreenDialog: true),
+      ),
+       GoRoute(
+        path: '/patient/personalize_notifications',
+        pageBuilder: (context, state) => const MaterialPage(child: PatientPersonalizeNotification()),
+      ),
     ],
-    // errorPageBuilder: (context, state) => const Scaffold(
-    //   body: Center(
-    //     child: Text('Page not found'),
-    //   ),
-    // ),
+    // Redirect to login if the user is not authenticated.
+    // You would typically implement logic here to check the auth state.
+    redirect: (BuildContext context, GoRouterState state) {
+      // For now, allow all navigation. Add your auth logic here.
+      final bool loggedIn = false; // Replace with your actual auth check
+      final bool isLoggingIn = state.uri.toString() == '/login';
+
+      // if (!loggedIn && !isLoggingIn) return '/login';
+      
+      return null;
+    },
+    errorPageBuilder: (context, state) => const NoTransitionPage(
+      child: Scaffold(
+        body: Center(
+          child: Text('Page not found'),
+        ),
+      ),
+    ),
   );
 }
