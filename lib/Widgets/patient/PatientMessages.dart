@@ -1,171 +1,158 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:medi_house/Widgets/model/Message.dart';
+import 'package:medi_house/Widgets/patient/PatientChatScreen.dart';
 
 class PatientMessages extends StatefulWidget {
-  const PatientMessages({Key? key, this.title}) : super(key: key);
-  final String? title;
-
-  @override
-  State<PatientMessages> createState() => _PatientMessagesState();
+ const PatientMessages({Key? key, this.title}) : super(key: key);
+ final String? title;
+ @override
+ State<PatientMessages> createState() => _PatientMessagesState();
 }
 
 class _PatientMessagesState extends State<PatientMessages> {
-  final _messageController = TextEditingController();
-  final _supabase = Supabase.instance.client;
-  late final Stream<List<Message>> _messagesStream;
+ final List<Map<String, dynamic>> _conversations = [
+   {
+     'name': 'Dr. Evelyn Reed',
+     'role': 'Doctor',
+     'lastMessage': 'You: Thanks for the clarification!',
+     'time': '10:42 AM',
+     'unreadCount': 0,
+     'avatar': 'ER'
+   },
+   {
+     'name': 'Downtown Pharmacy',
+     'role': 'Pharmacy',
+     'lastMessage': 'Your prescription is ready for pickup.',
+     'time': 'Yesterday',
+     'unreadCount': 1,
+     'avatar': 'DP'
+   },
+   {
+     'name': 'Dr. Alan Grant',
+     'role': 'Doctor',
+     'lastMessage': 'Please schedule a follow-up appointment.',
+     'time': 'Tue',
+     'unreadCount': 0,
+     'avatar': 'AG'
+   },
+ ];
 
-  // TODO: Replace with actual doctor ID logic (e.g., from selected appointment)
-  // For demo purposes, we might need a way to select a doctor or hardcode one for testing if no doctor is selected yet.
-  // Assuming we are chatting with a specific doctor.
-  String? _receiverId; 
+ @override
+ Widget build(BuildContext context) {
+   return Scaffold(
+     backgroundColor: Colors.white, 
+     appBar: AppBar(
+       title: const Text(
+         'Messages',
+         style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold), 
+       ),
+       backgroundColor: Colors.white, 
+       elevation: 0,
+     ),
+     body: SafeArea(
+       child: Column(
+         children: [
+           _buildSearchBar(),
+           _buildConversationList(),
+         ],
+       ),
+     ),
+   );
+ }
 
-  @override
-  void initState() {
-    super.initState();
-    final myId = _supabase.auth.currentUser?.id;
-    if (myId != null) {
-      _messagesStream = _supabase
-          .from('messages')
-          .stream(primaryKey: ['id'])
-          .order('created_at', ascending: true)
-          .map((maps) => maps.map((map) => Message.fromJson(map)).toList());
-    } else {
-      _messagesStream = const Stream.empty();
-    }
-  }
+ Widget _buildSearchBar() {
+   return Padding(
+     padding: const EdgeInsets.all(16.0),
+     child: TextField(
+       decoration: InputDecoration(
+         hintText: 'Search messages...',
+         hintStyle: TextStyle(color: Colors.grey[600]), 
+         prefixIcon: Icon(Icons.search, color: Colors.grey[600]), 
+         filled: true,
+         fillColor: Colors.grey[200], 
+         border: OutlineInputBorder(
+           borderRadius: BorderRadius.circular(8.0),
+           borderSide: BorderSide.none,
+         ),
+       ),
+     ),
+   );
+ }
 
-  Future<void> _sendMessage() async {
-    final content = _messageController.text.trim();
-    if (content.isEmpty) return;
-
-    final myId = _supabase.auth.currentUser?.id;
-    if (myId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bạn chưa đăng nhập')),
-      );
-      return;
-    }
-
-    // For testing, if no receiver is set, we can't send.
-    // In a real app, you'd pass the doctor's ID to this widget.
-    if (_receiverId == null) {
-       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Chưa chọn người nhận (Bác sĩ)')),
-      );
-      return;
-    }
-
-    try {
-      await _supabase.from('messages').insert({
-        'sender_id': myId,
-        'receiver_id': _receiverId,
-        'content': content,
-      });
-      _messageController.clear();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi gửi tin nhắn: $e')),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final myId = _supabase.auth.currentUser?.id;
-
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.title ?? 'Tin nhắn')),
-      body: Column(
-        children: [
-          // Temporary Dropdown or Input to select Doctor ID for testing if needed
-          // Or just a display if we assume it's passed in.
-          if (_receiverId == null)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Nhập ID Bác sĩ để chat (Test)',
-                  border: OutlineInputBorder(),
+ Widget _buildConversationList() {
+   return Expanded(
+     child: ListView.separated(
+       itemCount: _conversations.length,
+       separatorBuilder: (context, index) => Divider(
+         color: Colors.grey.withOpacity(0.2),
+         height: 1,
+         indent: 80,
+       ),
+       itemBuilder: (context, index) {
+         final conversation = _conversations[index];
+         return ListTile(
+           leading: CircleAvatar(
+             backgroundColor: Colors.blue, 
+             child: Text(
+               conversation['avatar'],
+               style: const TextStyle(color: Colors.white),
+             ),
+           ),
+           title: Text(
+             conversation['name'],
+             style: const TextStyle(
+               color: Colors.blue, 
+               fontWeight: FontWeight.bold,
+             ),
+           ),
+           subtitle: Text(
+             conversation['lastMessage'],
+             style: TextStyle(color: Colors.grey[600]), 
+             maxLines: 1,
+             overflow: TextOverflow.ellipsis,
+           ),
+           trailing: Column(
+             crossAxisAlignment: CrossAxisAlignment.end,
+             mainAxisAlignment: MainAxisAlignment.center,
+             children: [
+               Text(
+                 conversation['time'],
+                 style: TextStyle(
+                   color: conversation['unreadCount'] > 0 ? Colors.blue : Colors.grey[600], 
+                   fontSize: 12,
+                 ),
+               ),
+               const SizedBox(height: 4),
+               if (conversation['unreadCount'] > 0)
+                 Container(
+                   padding: const EdgeInsets.all(6),
+                   decoration: const BoxDecoration(
+                     color: Colors.blue, 
+                     shape: BoxShape.circle,
+                   ),
+                   child: Text(
+                     conversation['unreadCount'].toString(),
+                     style: const TextStyle(
+                       color: Colors.white,
+                       fontSize: 12,
+                       fontWeight: FontWeight.bold,
+                     ),
+                   ),
+                 )
+               else
+                 const SizedBox(height: 22), // to align with unread count
+             ],
+           ),
+           onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PatientChatScreen(name: conversation['name']),
                 ),
-                onChanged: (value) {
-                  setState(() {
-                    _receiverId = value;
-                  });
-                },
-              ),
-            ),
-
-          Expanded(
-            child: StreamBuilder<List<Message>>(
-              stream: _messagesStream,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Text('Lỗi: ${snapshot.error}'));
-                }
-                
-                final messages = snapshot.data ?? [];
-                // Filter messages for current conversation locally if needed, 
-                // though RLS should handle security, we might want to filter by specific conversation in UI
-                final conversationMessages = messages.where((m) => 
-                  (m.senderId == myId && m.receiverId == _receiverId) || 
-                  (m.senderId == _receiverId && m.receiverId == myId)
-                ).toList();
-
-                if (conversationMessages.isEmpty) {
-                  return const Center(child: Text('Chưa có tin nhắn nào.'));
-                }
-
-                return ListView.builder(
-                  itemCount: conversationMessages.length,
-                  itemBuilder: (context, index) {
-                    final message = conversationMessages[index];
-                    final isMe = message.senderId == myId;
-                    return Align(
-                      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: isMe ? Colors.blue : Colors.grey[300],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          message.content,
-                          style: TextStyle(color: isMe ? Colors.white : Colors.black),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: const InputDecoration(
-                      hintText: 'Nhập tin nhắn...',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: _sendMessage,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+              );
+           },
+         );
+       },
+     ),
+   );
+ }
 }
