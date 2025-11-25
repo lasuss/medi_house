@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class PatientNotification extends StatefulWidget {
   const PatientNotification({Key? key, this.title}) : super(key: key);
@@ -31,6 +32,7 @@ class _PatientNotificationState extends State<PatientNotification>
       'subtitle': 'Dr. Smith - Tomorrow at 10:00 AM',
       'time': '5m ago',
       'unread': true,
+      'route': '/patient/appointments',
     },
     {
       'icon': Icons.science_outlined,
@@ -38,6 +40,7 @@ class _PatientNotificationState extends State<PatientNotification>
       'subtitle': 'Your blood test results are in.',
       'time': '30m ago',
       'unread': true,
+      'route': '/patient/records/rec1',
     },
     {
       'icon': Icons.medication_outlined,
@@ -45,6 +48,7 @@ class _PatientNotificationState extends State<PatientNotification>
       'subtitle': 'Your prescription is ready for pickup.',
       'time': '1h ago',
       'unread': false,
+      'route': '/patient/records/rec3',
     },
   ];
 
@@ -55,6 +59,7 @@ class _PatientNotificationState extends State<PatientNotification>
       'subtitle': 'Your invoice #12345 has been paid.',
       'time': 'Yesterday',
       'unread': false,
+      'route': null, // No route for this one yet
     },
   ];
 
@@ -66,7 +71,7 @@ class _PatientNotificationState extends State<PatientNotification>
         backgroundColor: Colors.white,
         elevation: 0,
         title: const Text(
-          'Notifications',
+          'Thông báo',
           style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
         ),
         actions: [
@@ -93,7 +98,9 @@ class _PatientNotificationState extends State<PatientNotification>
         children: [
           _buildNotificationsList(_todayNotifications, _yesterdayNotifications),
           _buildNotificationsList(
-              _todayNotifications.where((n) => n['unread'] == true).toList(), []),
+              _todayNotifications.where((n) => n['unread'] == true).toList(),
+              _yesterdayNotifications.where((n) => n['unread'] == true).toList()
+          ),
         ],
       ),
     );
@@ -153,6 +160,11 @@ class _PatientNotificationState extends State<PatientNotification>
     return Column(
       children: [
         ListTile(
+          onTap: () {
+            if (notification['route'] != null) {
+              context.go(notification['route']);
+            }
+          },
           leading: CircleAvatar(
             backgroundColor: Colors.blue.withOpacity(0.1),
             child: Icon(notification['icon'], color: Colors.blue),
