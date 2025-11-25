@@ -93,6 +93,8 @@ class MediRouter {
           } else if (location.startsWith('/patient/messages')) {
             currentIndex = 2;
           } else if (location.startsWith('/patient/profile')) {
+            currentIndex = 4;
+          } else if (location.startsWith('/patient/notifications')) {
             currentIndex = 3;
           }
           // Doctor Routes
@@ -103,6 +105,8 @@ class MediRouter {
           } else if (location.startsWith('/doctor/messages')) {
             currentIndex = 2;
           } else if (location.startsWith('/doctor/profile')) {
+            currentIndex = 4;
+          } else if (location.startsWith('/doctor/notifications')) {
             currentIndex = 3;
           }
           // Pharmacy Routes
@@ -147,7 +151,26 @@ class MediRouter {
             path: '/patient/notifications',
             pageBuilder: (context, state) => const NoTransitionPage(child: PatientNotification()),
           ),
-
+          GoRoute(
+            path: '/patient/scan_id',
+            pageBuilder: (context, state) => const MaterialPage(child: PatientScanNationalID(), fullscreenDialog: true),
+          ),
+          GoRoute(
+            path: '/patient/records/add',
+            pageBuilder: (context, state) => const MaterialPage(child: PatientAddRecord(), fullscreenDialog: true),
+          ),
+          GoRoute(
+            path: '/patient/records/:id',
+            pageBuilder: (context, state) => MaterialPage(child: PatientRecordDetail(title: 'Record ${state.pathParameters[''''id''']}')),
+          ),
+          GoRoute(
+            path: '/patient/personalize_notifications',
+            pageBuilder: (context, state) => const MaterialPage(child: PatientPersonalizeNotification()),
+          ),
+          GoRoute(
+            path: '/patient/show_qr',
+            pageBuilder: (context, state) => const MaterialPage(child: PatientShowQR(), fullscreenDialog: true),
+          ),
           // --- Doctor Routes ---
           GoRoute(
             path: '/doctor/dashboard',
@@ -168,6 +191,14 @@ class MediRouter {
           GoRoute(
             path: '/doctor/notifications',
             pageBuilder: (context, state) => const NoTransitionPage(child: DoctorNotification()),
+          ),
+          GoRoute(
+            path: '/doctor/records/:id',
+            pageBuilder: (context, state) => MaterialPage(child: DoctorRecordDetail(title: 'Record ${state.pathParameters[''''id''']}')),
+          ),
+          GoRoute(
+            path: '/doctor/scan_qr',
+            pageBuilder: (context, state) => const MaterialPage(child: DoctorScanQR(), fullscreenDialog: true),
           ),
 
           // --- Pharmacy Routes ---
@@ -195,34 +226,9 @@ class MediRouter {
       // =======================================================================
       // Detail pages or pages that are pushed on top of the shell
       // =======================================================================
-      GoRoute(
-        path: '/patient/records/add',
-        pageBuilder: (context, state) => const MaterialPage(child: PatientAddRecord(), fullscreenDialog: true),
-      ),
-      GoRoute(
-        path: '/patient/records/:id',
-        pageBuilder: (context, state) => MaterialPage(child: PatientRecordDetail(title: 'Record ${state.pathParameters[''''id''']}')),
-      ),
-      GoRoute(
-        path: '/doctor/records/:id',
-        pageBuilder: (context, state) => MaterialPage(child: DoctorRecordDetail(title: 'Record ${state.pathParameters[''''id''']}')),
-      ),
-       GoRoute(
-        path: '/patient/scan_id',
-        pageBuilder: (context, state) => const MaterialPage(child: PatientScanNationalID(), fullscreenDialog: true),
-      ),
-       GoRoute(
-        path: '/patient/show_qr',
-        pageBuilder: (context, state) => const MaterialPage(child: PatientShowQR(), fullscreenDialog: true),
-      ),
-      GoRoute(
-        path: '/doctor/scan_qr',
-        pageBuilder: (context, state) => const MaterialPage(child: DoctorScanQR(), fullscreenDialog: true),
-      ),
-       GoRoute(
-        path: '/patient/personalize_notifications',
-        pageBuilder: (context, state) => const MaterialPage(child: PatientPersonalizeNotification()),
-      ),
+
+
+
     ],
     // Redirect to login if the user is not authenticated.
     // You would typically implement logic here to check the auth state.
