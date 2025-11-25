@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:medi_house/enroll/UserRole.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key, required this.title}) : super(key: key);
@@ -37,16 +38,68 @@ class _RegisterPageState extends State<RegisterPage> {
     context.go('/login');
   }
 
-  void _handleRegister() {
-    // TODO: Implement registration logic with Supabase
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Đăng ký với vai trò: ${_selectedRole.name}'),
-        backgroundColor: Colors.green,
-      ),
-    );
-    // On success, navigate to login or home
-    // context.go('/login');
+  Future<void> _handleRegister() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
+    final name = _nameController.text.trim();
+
+    if (email.isEmpty || password.isEmpty || name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng điền đầy đủ thông tin')),
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Mật khẩu không khớp')),
+      );
+      return;
+    }
+
+    try {
+      final AuthResponse res = await Supabase.instance.client.auth.signUp(
+        email: email,
+        password: password,
+        data: {
+          'name': name,
+          'role': _selectedRole.name, // 'patient', 'doctor', etc.
+          'gender': _selectedGender,
+          'dob': _dobController.text.trim(),
+        },
+      );
+
+      if (res.user != null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đăng ký thành công! Vui lòng đăng nhập.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          context.go('/login');
+        }
+      }
+    } on AuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi không xác định: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
