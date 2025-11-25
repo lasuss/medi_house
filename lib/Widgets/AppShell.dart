@@ -48,19 +48,19 @@ class _AppShellState extends State<AppShell> {
     return Scaffold(
       backgroundColor: const Color(0xFFF0F4F8), // Một màu nền sáng và sạch sẽ
       appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.white),
-        backgroundColor: Colors.blue[900],
+        iconTheme: const IconThemeData(color: Colors.blue),
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
+            icon: const Icon(Icons.menu, color: Colors.blue),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
         title: Text(
           title, // Sử dụng tiêu đề động
           style: const TextStyle(
-            color: Colors.white,
+            color: Colors.blue,
             fontSize: 20,
             fontWeight: FontWeight.w500,
           ),
@@ -68,7 +68,7 @@ class _AppShellState extends State<AppShell> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
+            icon: const Icon(Icons.logout, color: Colors.blue),
             onPressed: () {
               // Điều hướng về trang đăng nhập khi đăng xuất.
               context.go('/login');

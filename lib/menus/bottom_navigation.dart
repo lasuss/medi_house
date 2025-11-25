@@ -25,12 +25,14 @@ final Map<UserRole, List<NavigationItemConfig>> navigationConfigs = {
     const NavigationItemConfig(icon: FontAwesomeIcons.houseMedical, label: 'Trang chủ', route: '/patient/dashboard'),
     const NavigationItemConfig(icon: FontAwesomeIcons.calendarCheck, label: 'Lịch hẹn', route: '/patient/appointments'),
     const NavigationItemConfig(icon: FontAwesomeIcons.commentDots, label: 'Tin nhắn', route: '/patient/messages'),
+    const NavigationItemConfig(icon: FontAwesomeIcons.solidBell, label: 'Thông báo', route: '/patient/notifications'),
     const NavigationItemConfig(icon: FontAwesomeIcons.solidUser, label: 'Tài khoản', route: '/patient/profile'),
   ],
   UserRole.doctor: [
     const NavigationItemConfig(icon: FontAwesomeIcons.chartLine, label: 'Dashboard', route: '/doctor/dashboard'),
     const NavigationItemConfig(icon: FontAwesomeIcons.calendarDays, label: 'Lịch làm việc', route: '/doctor/schedule'),
     const NavigationItemConfig(icon: FontAwesomeIcons.commentMedical, label: 'Tin nhắn', route: '/doctor/messages'),
+    const NavigationItemConfig(icon: FontAwesomeIcons.solidBell, label: 'Thông báo', route: '/doctor/notifications'),
     const NavigationItemConfig(icon: FontAwesomeIcons.userDoctor, label: 'Tài khoản', route: '/doctor/profile'),
   ],
   UserRole.pharmacy: [
@@ -68,7 +70,7 @@ class BottomNavigation extends StatelessWidget {
     return BottomNavigationBar(
       currentIndex: currentIndex,
       type: BottomNavigationBarType.fixed,
-      backgroundColor: const Color(0xFF0A192F), // Hợp với theme màu tối
+      backgroundColor: Colors.white,
       selectedItemColor: Colors.blueAccent,
       unselectedItemColor: Colors.grey[400],
       onTap: (index) {

@@ -1,0 +1,50 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.appointments (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  patient_id uuid,
+  doctor_id uuid,
+  date timestamp without time zone,
+  status text,
+  created_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT appointments_pkey PRIMARY KEY (id),
+  CONSTRAINT appointments_patient_id_fkey FOREIGN KEY (patient_id) REFERENCES public.users(id),
+  CONSTRAINT appointments_doctor_id_fkey FOREIGN KEY (doctor_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.prescriptions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  record_id uuid,
+  doctor_id uuid,
+  patient_id uuid,
+  medicines jsonb,
+  instructions text,
+  created_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT prescriptions_pkey PRIMARY KEY (id),
+  CONSTRAINT prescriptions_record_id_fkey FOREIGN KEY (record_id) REFERENCES public.records(id),
+  CONSTRAINT prescriptions_doctor_id_fkey FOREIGN KEY (doctor_id) REFERENCES public.users(id),
+  CONSTRAINT prescriptions_patient_id_fkey FOREIGN KEY (patient_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.records (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  patient_id uuid,
+  doctor_id uuid,
+  symptoms text,
+  diagnosis text,
+  notes text,
+  created_at timestamp without time zone DEFAULT now(),
+  updated_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT records_pkey PRIMARY KEY (id),
+  CONSTRAINT records_patient_id_fkey FOREIGN KEY (patient_id) REFERENCES public.users(id),
+  CONSTRAINT records_doctor_id_fkey FOREIGN KEY (doctor_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.users (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text,
+  email text UNIQUE,
+  phone text,
+  role text CHECK (role = ANY (ARRAY['patient'::text, 'doctor'::text, 'pharmacy'::text, 'admin'::text])),
+  avatar_url text,
+  created_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT users_pkey PRIMARY KEY (id)
+);
