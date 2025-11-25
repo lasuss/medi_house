@@ -26,7 +26,7 @@ import 'package:medi_house/Widgets/patient/PatientNotification.dart';
 import 'package:medi_house/Widgets/patient/PatientPersonalizeNotification.dart';
 import 'package:medi_house/Widgets/patient/PatientProfile.dart';
 import 'package:medi_house/Widgets/patient/PatientRecordDetail.dart';
-import 'package:medi_house/Widgets/patient/PatientScanNationalID.dart';
+import 'package:medi_house/Widgets/Patient/PatientScanNationalID.dart';
 import 'package:medi_house/Widgets/patient/PatientShowQR.dart';
 
 // Pharmacy Widgets
@@ -201,7 +201,7 @@ class MediRouter {
       ),
       GoRoute(
         path: '/patient/records/:id',
-        pageBuilder: (context, state) => MaterialPage(child: PatientRecordDetail(title: 'Record ${state.pathParameters[''''id''']}')),
+        pageBuilder: (context, state) => MaterialPage(child: PatientRecordDetail(title: 'Record ${state.pathParameters[''''id''']}', patientID: '1111',)),
       ),
       GoRoute(
         path: '/doctor/records/:id',
