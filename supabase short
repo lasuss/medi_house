@@ -1,0 +1,55 @@
+Thông tin schema có sẵn
+Các schema hiện có trong project: public, storage, auth, graphql, graphql_public, vault, realtime, pgbouncer, extensions.
+public: nơi thường chứa các bảng dữ liệu ứng dụng.
+auth: bảng và hàm liên quan đến Supabase Auth.
+storage: dữ liệu file/object cho Supabase Storage.
+realtime: cấu trúc dùng cho Realtime/broadcast messaging.
+các schema khác là nội bộ hoặc cho GraphQL/extension.
+Các endpoints và keys cần để client (Android) kết nối
+SUPABASE_URL — URL endpoint của project Supabase (ví dụ: https://xyz.supabase.co).
+SUPABASE_ANON_KEY — khóa công khai để client dùng (phù hợp cho các thao tác bị giới hạn bởi RLS).
+(Nếu dùng backend server hoặc cần quyền cao) SUPABASE_SERVICE_ROLE_KEY — chỉ dùng ở server (không được để trong app).
+Nếu bạn dùng Realtime (WebSockets) hoặc Broadcast channel: cần cấu hình channel topic + event name.
+Xác thực & RLS (Row Level Security)
+Supabase thường bật RLS trên bảng. Khi RLS bật, mọi truy vấn từ client sẽ bị lọc theo policy — bạn cần:
+Đăng nhập người dùng bằng Supabase Auth để có JWT.
+Sử dụng JWT (được set tự động bởi Supabase client) để thực hiện các thao tác: SELECT/INSERT/UPDATE/DELETE.
+Hàm dùng trong policy: auth.uid() (trả UUID người dùng) và auth.jwt() (để đọc custom claims).
+Kiểm tra rằng bảng bạn cần đã có policy phù hợp (ví dụ: người dùng chỉ thấy dữ liệu của chính họ hoặc dữ liệu tenant).
+Storage (file) access
+Storage sử dụng bucket; policy trên storage.objects thường kiểm soát folder/user.
+Đường dẫn file/bucket + quyền (public/private) quyết định cách client tải lên/tải xuống.
+Realtime / Broadcast
+Nếu app cần realtime messages, dùng Supabase Realtime channels:
+Topic pattern gợi ý: scope:entity:id (ví dụ room:123:messages).
+Sử dụng private channels cho nội dung cần bảo mật.
+Server-side: tạo trigger functions dùng realtime.broadcast_changes để phát sự kiện khi DB thay đổi.
+DB phải có policy cho realtime.messages để user có thể SELECT/INSERT vào đó.
+Các bước kỹ thuật để triển khai trên Android (Gemini)
+Lấy SUPABASE_URL và SUPABASE_ANON_KEY từ project settings.
+Cài SDK Supabase hoặc HTTP client phù hợp cho Android (nếu có SDK Kotlin/Java).
+Đăng nhập người dùng qua email/password, magic link, OAuth... để nhận JWT.
+Thiết lập client để gửi JWT trong header Authorization: Bearer (thường Supabase SDK làm tự động).
+Thực hiện các request tới REST/GraphQL endpoint hoặc dùng Realtime (WebSocket) cho streaming:
+REST: /rest/v1/
+
+
+Những kiểm tra cần làm trước khi triển khai
+Kiểm tra bảng cần thiết tồn tại trong schema public (hoặc nơi bạn dự định dùng).
+Kiểm tra RLS: bảng đã Enable RLS? Các policy có cho role authenticated quyền tương ứng không?
+Kiểm tra index cho các cột dùng trong policy (user_id, tenant_id) để hiệu năng tốt.
+Kiểm tra buckets/storage permission nếu cần upload file từ app.
+Kiểm tra Realtime triggers / policies nếu cần tính năng realtime.
+Bảo mật & best practices
+Không lưu SUPABASE_SERVICE_ROLE_KEY trong app.
+Dùng RLS + policies để bảo đảm dữ liệu user-isolated.
+Hạn chế quyền của anon; chỉ cho phép những endpoint công khai cần thiết.
+Ghi log / audit trên server nếu có thao tác nhạy cảm (sử dụng Edge Function hoặc server side).
+Nếu bạn muốn tôi tạo các artifact để bạn dùng trực tiếp
+Tôi có thể:
+Liệt kê các bảng hiện có trong schema public.
+Kiểm tra RLS (bật/tắt) và liệt kê policies cho các bảng quan trọng.
+Sinh mẫu code kết nối Android (kotlin) hoặc ví dụ HTTP request sử dụng JWT.
+Tạo trigger function mẫu để broadcast thay đổi qua Realtime.
+Tạo Edge Function mẫu để thực hiện logic server-side an toàn.
+Chỉ cần cho biết bạn muốn tôi bắt đầu từ bước nào (ví dụ: "liệt kê bảng public", "kiểm tra policies cho bảng X", hoặc "tạo ví dụ Kotlin login + fetch rows").
