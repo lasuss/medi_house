@@ -17,13 +17,13 @@ class _PatientScanNationalIDState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0E1621),
+      backgroundColor: const Color(0xFFFFFF),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0E1621),
+        backgroundColor: const Color(0xFFFFFF),
         elevation: 0,
         title: const Text(
           "Quét CCCD",
-          style: TextStyle(fontSize: 22, color: Colors.white),
+          style: TextStyle(fontSize: 22, color: Colors.blue),
         ),
         centerTitle: true,
       ),
@@ -60,9 +60,9 @@ class _PatientScanNationalIDState
             ),
             const SizedBox(height: 20),
             const Text(
-              "Quét mã QR để truy cập hồ sơ bệnh nhân",
+              "Quét mã QR trên CCCD để truy cập hồ sơ bệnh nhân",
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white70, fontSize: 14),
+              style: TextStyle(color: Colors.blue, fontSize: 14,  fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 30),
             Row(
@@ -78,7 +78,7 @@ class _PatientScanNationalIDState
                       ),
                     ),
                     child: const Text(
-                      "Enter ID manually",
+                      "Điền số CCCD thủ công",
                       style: TextStyle(color: Colors.white),
                     ),
                   ),
@@ -90,7 +90,7 @@ class _PatientScanNationalIDState
                       Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF007AFF),
+                      backgroundColor: const Color(0xff2196f3),
                       minimumSize: const Size(double.infinity, 48),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
