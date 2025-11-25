@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:go_router/go_router.dart';
 
 class PatientDashboard extends StatefulWidget {
   const PatientDashboard({Key? key, this.title}) : super(key: key);
@@ -8,50 +8,75 @@ class PatientDashboard extends StatefulWidget {
   State<PatientDashboard> createState() => _PatientDashboardState();
 }
 
-
 class _PatientDashboardState extends State<PatientDashboard> {
   int _selectedIndex = 0;
-
+  late List<Map<String, dynamic>> _filteredRecords;
 
   final List<String> _filters = [
-    'All',
-    'Consultations',
-    'Lab Results',
-    'Prescriptions'
+    'Tất cả',
+    'Kết quả khám bệnh',
+    'Kết quả xét nghiệm',
+    'Đơn thuốc'
   ];
-
 
   final List<Map<String, dynamic>> _medicalRecords = [
     {
+      'id': 'rec1',
       'icon': Icons.article_outlined,
       'title': 'Annual Blood Work',
       'subtitle': 'Downtown Clinic Labs',
       'date': 'Nov 02, 2023',
-      'status': 'Results Ready'
+      'status': 'Results Ready',
+      'category': 'Kết quả xét nghiệm'
     },
     {
+      'id': 'rec2',
       'icon': Icons.medical_services_outlined,
       'title': 'Dermatology Follow-up',
       'subtitle': 'Dr. Evelyn Reed',
       'date': 'Oct 26, 2023',
-      'status': null
+      'status': null,
+      'category': 'Kết quả khám bệnh'
     },
     {
+      'id': 'rec3',
       'icon': Icons.article_outlined,
       'title': 'Allergy Medication Refill',
       'subtitle': 'Dr. Alan Grant',
       'date': 'Oct 15, 2023',
-      'status': null
+      'status': null,
+      'category': 'Đơn thuốc'
     },
     {
+      'id': 'rec4',
       'icon': Icons.medical_services_outlined,
       'title': 'Annual Physical Exam',
       'subtitle': 'Dr. Sarah Johnson',
       'date': 'Sep 21, 2023',
-      'status': null
+      'status': null,
+      'category': 'Kết quả khám bệnh'
     },
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _filteredRecords = _medicalRecords; // Initially, show all records
+  }
+
+  void _updateFilteredRecords(int index) {
+    setState(() {
+      _selectedIndex = index;
+      if (index == 0) {
+        _filteredRecords = _medicalRecords;
+      } else {
+        final selectedCategory = _filters[index];
+        _filteredRecords = _medicalRecords
+            .where((record) => record['category'] == selectedCategory)
+            .toList();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,12 +88,11 @@ class _PatientDashboardState extends State<PatientDashboard> {
         leading: const Padding(
           padding: EdgeInsets.all(8.0),
           child: CircleAvatar(
-            // Display a user icon or image
             child: Icon(Icons.person),
           ),
         ),
         title: const Text(
-          'Medical Records',
+          'Hồ sơ y tế',
           style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
         ),
         actions: [
@@ -94,7 +118,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Handle FAB tap
+          context.go('/patient/records/add');
         },
         backgroundColor: Colors.blue,
         child: const Icon(Icons.add),
@@ -102,11 +126,10 @@ class _PatientDashboardState extends State<PatientDashboard> {
     );
   }
 
-
   Widget _buildSearchField() {
     return TextField(
       decoration: InputDecoration(
-        hintText: 'Search records...',
+        hintText: 'Tìm kiếm hồ sơ...',
         hintStyle: TextStyle(color: Colors.grey[600]),
         prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
         filled: true,
@@ -119,7 +142,6 @@ class _PatientDashboardState extends State<PatientDashboard> {
     );
   }
 
-
   Widget _buildFilterChips() {
     return SizedBox(
       height: 35,
@@ -127,23 +149,28 @@ class _PatientDashboardState extends State<PatientDashboard> {
         scrollDirection: Axis.horizontal,
         itemCount: _filters.length,
         itemBuilder: (context, index) {
+          final isSelected = _selectedIndex == index;
           return Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: ChoiceChip(
               label: Text(_filters[index]),
-              selected: _selectedIndex == index,
+              selected: isSelected,
               onSelected: (selected) {
                 if (selected) {
-                  setState(() {
-                    _selectedIndex = index;
-                  });
+                  _updateFilteredRecords(index);
                 }
               },
+              avatar: isSelected ? const Icon(Icons.check, color: Colors.white, size: 16) : null,
               backgroundColor: Colors.grey[200],
               selectedColor: Colors.blue,
-              labelStyle: const TextStyle(color: Colors.black),
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : Colors.black,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0)),
+                  borderRadius: BorderRadius.circular(8.0),
+                  side: BorderSide(color: isSelected ? Colors.blue : Colors.grey[300]!)),
+              showCheckmark: false,
             ),
           );
         },
@@ -151,13 +178,12 @@ class _PatientDashboardState extends State<PatientDashboard> {
     );
   }
 
-
   Widget _buildMedicalRecordsList() {
     return Expanded(
       child: ListView.builder(
-        itemCount: _medicalRecords.length,
+        itemCount: _filteredRecords.length,
         itemBuilder: (context, index) {
-          final record = _medicalRecords[index];
+          final record = _filteredRecords[index];
           return Card(
             color: Colors.white,
             elevation: 2.0,
@@ -166,6 +192,9 @@ class _PatientDashboardState extends State<PatientDashboard> {
               borderRadius: BorderRadius.circular(12.0),
             ),
             child: ListTile(
+              onTap: () {
+                context.go('/patient/records/${record['id']}');
+              },
               leading: CircleAvatar(
                 backgroundColor: Colors.blue,
                 child: Icon(record['icon'], color: Colors.white),
@@ -199,7 +228,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                       child: Text(
                         record['status'],
                         style:
-                        const TextStyle(color: Colors.green, fontSize: 10),
+                            const TextStyle(color: Colors.green, fontSize: 10),
                       ),
                     ),
                   ]
