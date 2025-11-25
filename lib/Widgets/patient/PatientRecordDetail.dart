@@ -67,13 +67,13 @@ class _PatientRecordDetailState extends State<PatientRecordDetail> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0E1621),
+      backgroundColor: const Color(0xFFFFFF),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0E1621),
+        backgroundColor: const Color(0xFFFFFF),
         elevation: 0,
         title: const Text(
           "Hồ sơ bệnh nhân",
-          style: TextStyle(fontSize: 22, color: Colors.white),
+          style: TextStyle(fontSize: 22, color: Colors.blue),
         ),
         centerTitle: true,
       ),
@@ -139,7 +139,7 @@ class _PatientRecordDetailState extends State<PatientRecordDetail> {
                       ),
                     ),
                     child: const Text(
-                      "Chỉnh sửa",
+                      "Quay lại",
                       style: TextStyle(color: Colors.white),
                     ),
                   ),
@@ -158,7 +158,7 @@ class _PatientRecordDetailState extends State<PatientRecordDetail> {
                       ),
                     ),
                     child: const Text(
-                      "Quay lại",
+                      "Lưu",
                       style: TextStyle(color: Colors.white),
                     ),
                   ),
@@ -181,40 +181,64 @@ class _PatientRecordDetailState extends State<PatientRecordDetail> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF4A515A),
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 12,
+            spreadRadius: 0,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 🔵 Title — màu xanh
           Text(
             title,
-            style:
-            const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: Color(0xff2196f3),
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          const SizedBox(height: 12),
+
+          const SizedBox(height: 16),
 
           ...items.entries.map((e) {
             return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.only(bottom: 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(e.key,
-                      style: const TextStyle(
-                          color: Colors.white70, fontSize: 13)),
-                  const SizedBox(height: 4),
+                  // Label xám nhạt
+                  Text(
+                    e.key,
+                    style: TextStyle(
+                      color: Colors.grey.shade700,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+
+                  // Ô chứa giá trị — giống UI bạn đưa
                   Container(
                     width: double.infinity,
                     padding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF606871),
-                      borderRadius: BorderRadius.circular(6),
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       e.value.isNotEmpty ? e.value : "(trống)",
-                      style: const TextStyle(color: Colors.white, fontSize: 15),
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],
@@ -225,4 +249,5 @@ class _PatientRecordDetailState extends State<PatientRecordDetail> {
       ),
     );
   }
+
 }

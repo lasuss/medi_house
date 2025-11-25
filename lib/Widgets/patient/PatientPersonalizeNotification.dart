@@ -22,13 +22,13 @@ class _PatientPersonalizeNotificationState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0E1621),
+      backgroundColor: const Color(0xFFFFFF),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0E1621),
+        backgroundColor: const Color(0xFFFFFF),
         elevation: 0,
         title: const Text(
           "Cá nhân hóa thông báo",
-          style: TextStyle(fontSize: 22, color: Colors.white),
+          style: TextStyle(fontSize: 22, color: Colors.blue),
         ),
         centerTitle: true,
       ),
@@ -44,7 +44,7 @@ class _PatientPersonalizeNotificationState
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF4A515A),
+                color: const Color(0xFFFFFF),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
@@ -54,19 +54,19 @@ class _PatientPersonalizeNotificationState
                     notifyMedicine,
                         (value) => setState(() => notifyMedicine = value),
                   ),
-                  const Divider(color: Colors.white24),
+                  const Divider(color: Colors.blue),
                   _buildSwitchRow(
                     "Nhắc lịch khám",
                     notifyAppointment,
                         (value) => setState(() => notifyAppointment = value),
                   ),
-                  const Divider(color: Colors.white24),
+                  const Divider(color: Colors.blue),
                   _buildSwitchRow(
                     "Kết quả xét nghiệm",
                     notifyLabResult,
                         (value) => setState(() => notifyLabResult = value),
                   ),
-                  const Divider(color: Colors.white24),
+                  const Divider(color: Colors.blue),
                   _buildSwitchRow(
                     "Tin nhắn từ bác sĩ",
                     notifyDoctorMessage,
@@ -135,7 +135,7 @@ class _PatientPersonalizeNotificationState
       children: [
         Text(
           title,
-          style: const TextStyle(color: Colors.white, fontSize: 16),
+          style: const TextStyle(color: Colors.blue, fontSize: 16,  fontWeight: FontWeight.bold),
         ),
         Switch(
           value: value,
