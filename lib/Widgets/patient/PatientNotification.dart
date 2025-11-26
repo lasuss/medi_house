@@ -1,212 +1,127 @@
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class PatientNotification extends StatefulWidget {
-  const PatientNotification({Key? key, this.title}) : super(key: key);
-  final String? title;
-  @override
-  State<PatientNotification> createState() => _PatientNotificationState();
-}
+class PatientNotification extends StatelessWidget {
+  const PatientNotification({Key? key}) : super(key: key);
 
-class _PatientNotificationState extends State<PatientNotification>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  final List<Map<String, dynamic>> _todayNotifications = [
+  final List<Map<String, dynamic>> _notifications = const [
     {
-      'icon': Icons.calendar_today,
-      'title': 'Appointment Reminder',
-      'subtitle': 'Dr. Smith - Tomorrow at 10:00 AM',
-      'time': '5m ago',
+      'icon': Icons.system_update,
+      'title': 'Cập nhật hệ thống',
+      'subtitle': 'Ứng dụng sẽ được bảo trì vào lúc 2 giờ sáng.',
+      'time': '1h ago',
       'unread': true,
+      'route': null,
+    },
+    {
+      'icon': Icons.new_releases,
+      'title': 'Tính năng mới: Đặt lịch trực tuyến',
+      'subtitle': 'Giờ đây bạn có thể đặt lịch hẹn dễ dàng hơn.',
+      'time': '1d ago',
+      'unread': false,
       'route': '/patient/appointments',
     },
     {
-      'icon': Icons.science_outlined,
-      'title': 'Lab Results Available',
-      'subtitle': 'Your blood test results are in.',
-      'time': '30m ago',
-      'unread': true,
-      'route': '/patient/records/rec1',
+      'icon': Icons.lightbulb_outline,
+      'title': 'Lời khuyên sức khỏe hàng tuần',
+      'subtitle': 'Uống đủ nước mỗi ngày để có một cơ thể khỏe mạnh.',
+      'time': '2d ago',
+      'unread': false,
+      'route': null,
     },
     {
-      'icon': Icons.medication_outlined,
-      'title': 'Medication Ready',
-      'subtitle': 'Your prescription is ready for pickup.',
-      'time': '1h ago',
+      'icon': Icons.campaign,
+      'title': 'Thông báo nghỉ lễ',
+      'subtitle': 'Phòng khám sẽ nghỉ lễ từ ngày 30/4 đến hết 1/5.',
+      'time': '3d ago',
       'unread': false,
-      'route': '/patient/records/rec3',
-    },
-  ];
-
-  final List<Map<String, dynamic>> _yesterdayNotifications = [
-    {
-      'icon': Icons.receipt_long_outlined,
-      'title': 'Payment Confirmed',
-      'subtitle': 'Your invoice #12345 has been paid.',
-      'time': 'Yesterday',
-      'unread': false,
-      'route': null, // No route for this one yet
+      'route': null,
     },
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Thông báo',
-          style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.check_circle_outline, color: Colors.blue),
-            onPressed: () {
-              // Handle filter tap
-            },
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          title: const Text(
+            'Thông báo',
+            style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
           ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.blue,
-          labelColor: Colors.blue,
-          unselectedLabelColor: Colors.grey,
-          tabs: const [
-            Tab(text: 'All'),
-            Tab(text: 'Unread'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.check_circle_outline, color: Colors.blue),
+              onPressed: () {
+                // Handle filter tap
+              },
+            ),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildNotificationsList(_todayNotifications, _yesterdayNotifications),
-          _buildNotificationsList(
-              _todayNotifications.where((n) => n['unread'] == true).toList(),
-              _yesterdayNotifications.where((n) => n['unread'] == true).toList()
-          ),
-        ],
-      ),
-    );
+        body: _buildNotificationsList(context, _notifications));
   }
 
   Widget _buildNotificationsList(
-      List<Map<String, dynamic>> today, List<Map<String, dynamic>> yesterday) {
-    return ListView(
-      padding: const EdgeInsets.all(16.0),
-      children: [
-        if (today.isNotEmpty) ...[
-          const Text(
-            'Today',
-            style: TextStyle(
-                color: Colors.blue, fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-            child: Column(
-              children: today
-                  .map((notification) =>
-                      _buildNotificationItem(notification, isLast: notification == today.last))
-                  .toList(),
-            ),
-          ),
-        ],
-        if (yesterday.isNotEmpty) ...[
-          const SizedBox(height: 20),
-          const Text(
-            'Yesterday',
-            style: TextStyle(
-                color: Colors.blue, fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-            child: Column(
-              children: yesterday
-                  .map((notification) =>
-                      _buildNotificationItem(notification, isLast: notification == yesterday.last))
-                  .toList(),
-            ),
-          ),
-        ]
-      ],
-    );
+      BuildContext context, List<Map<String, dynamic>> notifications) {
+    return ListView.builder(
+        padding: const EdgeInsets.all(16.0),
+        itemCount: notifications.length,
+        itemBuilder: (context, index) {
+          final notification = notifications[index];
+          // Group by date logic can be added here if needed
+          // For simplicity, just showing a list
+          return _buildNotificationItem(context, notification);
+        });
   }
 
-  Widget _buildNotificationItem(Map<String, dynamic> notification, {bool isLast = false}) {
-    return Column(
-      children: [
-        ListTile(
-          onTap: () {
-            if (notification['route'] != null) {
-              context.go(notification['route']);
-            }
-          },
-          leading: CircleAvatar(
-            backgroundColor: Colors.blue.withOpacity(0.1),
-            child: Icon(notification['icon'], color: Colors.blue),
-          ),
-          title: Text(
-            notification['title'],
-            style: const TextStyle(
-                color: Colors.blue, fontWeight: FontWeight.bold),
-          ),
-          subtitle: Text(
-            notification['subtitle'],
-            style: TextStyle(color: Colors.grey[600]),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (notification['unread'])
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Colors.orange,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              const SizedBox(width: 8),
-              Text(
-                notification['time'],
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
-              ),
-            ],
-          ),
+  Widget _buildNotificationItem(
+      BuildContext context, Map<String, dynamic> notification) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16.0),
+      elevation: 2.0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      child: ListTile(
+        onTap: () {
+          if (notification['route'] != null) {
+            context.go(notification['route']);
+          }
+        },
+        leading: CircleAvatar(
+          backgroundColor: Colors.blue.withOpacity(0.1),
+          child: Icon(notification['icon'], color: Colors.blue),
         ),
-        if (!isLast)
-          Padding(
-            padding: const EdgeInsets.only(left: 70.0),
-            child: Divider(
-              color: Colors.grey.withOpacity(0.2),
-              height: 1,
+        title: Text(
+          notification['title'],
+          style:
+              const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(
+          notification['subtitle'],
+          style: TextStyle(color: Colors.grey[600]),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (notification['unread'])
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Colors.orange,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            const SizedBox(width: 8),
+            Text(
+              notification['time'],
+              style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
-          )
-      ],
+          ],
+        ),
+      ),
     );
   }
 }
