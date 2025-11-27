@@ -2,7 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import '../enroll/UserRole.dart';
+import 'package:medi_house/enroll/UserRole.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key, required this.title}) : super(key: key);
@@ -26,7 +27,7 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _handleLogin() {
+  Future<void> _handleLogin() async {
     String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
 
@@ -40,38 +41,59 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    // TODO: Implement login logic with Supabase based on `email`, `password`, and `_selectedRole`.
-    
-    // For now, simple navigation for demonstration
-    if (email == 'patient' && password == 'patient') {
-        context.go('/patient/dashboard');
-    } else if (email == 'doctor' && password == 'doctor') {
-        context.go('/doctor/dashboard');
-    } else if (email == 'pharmacy' && password == 'pharmacy') {
-        context.go('/pharmacy/pending');
-    } else if (email == 'admin' && password == 'admin') {
-        context.go('/admin/dashboard');
-    } else {
-        // Dummy navigation based on role for now
+    try {
+      final AuthResponse res = await Supabase.instance.client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      if (res.user != null) {
+        // Fetch user role from public.users table
+        final userData = await Supabase.instance.client
+            .from('users')
+            .select('role')
+            .eq('id', res.user!.id)
+            .single();
+
+        final role = userData['role'] as String?;
+
+        if (mounted) {
+          if (role == 'patient') {
+            context.go('/patient/dashboard');
+          } else if (role == 'doctor') {
+            context.go('/doctor/dashboard');
+          } else if (role == 'pharmacy') {
+            context.go('/pharmacy/pending');
+          } else if (role == 'admin') {
+            context.go('/admin/dashboard');
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Không xác định được vai trò: $role'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        }
+      }
+    } on AuthException catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-            content: Text('Đăng nhập với vai trò: ${_selectedRole.name}'),
-            backgroundColor: Colors.green,
-            ),
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: Colors.red,
+          ),
         );
-        // Replace with actual navigation
-        // switch (_selectedRole) {
-        //     case UserRole.patient:
-        //         context.go('/home');
-        //         break;
-        //     case UserRole.doctor:
-        //         context.go('/doctor/schedule');
-        //         break;
-        //     case UserRole.pharmacy:
-        //         context.go('/pharmacy/dashboard');
-        //         break;
-        //     default:
-        // }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi đăng nhập: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
