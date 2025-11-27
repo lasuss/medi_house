@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medi_house/helpers/routers.dart';
+import 'package:medi_house/helpers/UserManager.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
@@ -10,6 +11,7 @@ Future<void> main() async {
       url: 'https://hrsscqptpcfixkikbnxn.supabase.co',
       anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhyc3NjcXB0cGNmaXhraWtibnhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3MzI1NzYsImV4cCI6MjA3OTMwODU3Nn0.QLdIXcuOqhEfGuq1XKccDfoonfHW7NXP5pnYnYlAd2s'
   );
+  await UserManager.instance.loadUser();
   runApp(const MyApp());
 }
 

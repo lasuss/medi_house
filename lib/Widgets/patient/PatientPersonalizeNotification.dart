@@ -10,16 +10,14 @@ class PatientPersonalizeNotification extends StatefulWidget {
       _PatientPersonalizeNotificationState();
 }
 
-class _PatientPersonalizeNotificationState
-    extends State<PatientPersonalizeNotification> {
+class _PatientPersonalizeNotificationState extends State<PatientPersonalizeNotification> with SingleTickerProviderStateMixin {
 
   // States for each notification type
   bool notifyMedicine = true;
   bool notifyAppointment = true;
   bool notifyLabResult = false;
   bool notifyDoctorMessage = true;
-    extends State<PatientPersonalizeNotification>
-    with SingleTickerProviderStateMixin {
+
   late TabController _tabController;
 
   @override
@@ -195,150 +193,7 @@ class _PatientPersonalizeNotificationState
           activeColor: const Color(0xFF007AFF),
           onChanged: onChanged,
         ),
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Thông báo',
-          style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.check_circle_outline, color: Colors.blue),
-            onPressed: () {
-              // Handle filter tap
-            },
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.blue,
-          labelColor: Colors.blue,
-          unselectedLabelColor: Colors.grey,
-          tabs: const [
-            Tab(text: 'All'),
-            Tab(text: 'Unread'),
-            Tab(text: 'Personalize'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildNotificationsList(_todayNotifications, _yesterdayNotifications),
-          _buildNotificationsList(
-              _todayNotifications.where((n) => n['unread'] == true).toList(),
-              _yesterdayNotifications
-                  .where((n) => n['unread'] == true)
-                  .toList()),
-          _buildNotificationsList(_todayNotifications, _yesterdayNotifications),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildNotificationsList(
-      List<Map<String, dynamic>> today, List<Map<String, dynamic>> yesterday) {
-    return ListView(
-      padding: const EdgeInsets.all(16.0),
-      children: [
-        if (today.isNotEmpty) ...[
-          const Text(
-            'Today',
-            style: TextStyle(
-                color: Colors.blue, fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-            child: Column(
-              children: today
-                  .map((notification) => _buildNotificationItem(notification,
-                      isLast: notification == today.last))
-                  .toList(),
-            ),
-          ),
-        ],
-        if (yesterday.isNotEmpty) ...[
-          const SizedBox(height: 20),
-          const Text(
-            'Yesterday',
-            style: TextStyle(
-                color: Colors.blue, fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-            child: Column(
-              children: yesterday
-                  .map((notification) => _buildNotificationItem(notification,
-                      isLast: notification == yesterday.last))
-                  .toList(),
-            ),
-          ),
-        ]
-      ],
-    );
-  }
-
-  Widget _buildNotificationItem(Map<String, dynamic> notification,
-      {bool isLast = false}) {
-    return Column(
-      children: [
-        ListTile(
-          onTap: () {
-            if (notification['route'] != null) {
-              context.go(notification['route']);
-            }
-          },
-          leading: CircleAvatar(
-            backgroundColor: Colors.blue.withOpacity(0.1),
-            child: Icon(notification['icon'], color: Colors.blue),
-          ),
-          title: Text(
-            notification['title'],
-            style: const TextStyle(
-                color: Colors.blue, fontWeight: FontWeight.bold),
-          ),
-          subtitle: Text(
-            notification['subtitle'],
-            style: TextStyle(color: Colors.grey[600]),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (notification['unread'])
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Colors.orange,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              const SizedBox(width: 8),
-              Text(
-                notification['time'],
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
-              ),
-            ],
-          ),
-        ),
-        if (!isLast)
-          Padding(
-            padding: const EdgeInsets.only(left: 70.0),
-            child: Divider(
-              color: Colors.grey.withOpacity(0.2),
-              height: 1,
-            ),
-          )
       ],
     );
   }

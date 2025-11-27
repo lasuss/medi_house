@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:medi_house/Widgets/AppShell.dart';
 import 'package:medi_house/Widgets/login.dart';
 import 'package:medi_house/Widgets/register.dart';
+import 'package:medi_house/enroll/UserRole.dart';
+import 'package:medi_house/helpers/UserManager.dart';
 
 // Admin Widgets
 import 'package:medi_house/Widgets/admin/AdminDashboard.dart';
@@ -161,7 +163,7 @@ class MediRouter {
           ),
           GoRoute(
             path: '/patient/records/:id',
-            pageBuilder: (context, state) => MaterialPage(child: PatientRecordDetail(title: 'Record ${state.pathParameters[''''id''']}')),
+            pageBuilder: (context, state) => MaterialPage(child: PatientRecordDetail(title: 'Record ${state.pathParameters[''''id''']}', patientID: '1111',)),
           ),
           GoRoute(
             path: '/patient/personalize_notifications',
@@ -233,11 +235,18 @@ class MediRouter {
     // Redirect to login if the user is not authenticated.
     // You would typically implement logic here to check the auth state.
     redirect: (BuildContext context, GoRouterState state) {
-      // For now, allow all navigation. Add your auth logic here.
-      final bool loggedIn = false; // Replace with your actual auth check
-      final bool isLoggingIn = state.uri.toString() == '/login';
+      final bool loggedIn = UserManager.instance.isLoggedIn;
+      final bool isLoggingIn = state.uri.toString() == '/login' || state.uri.toString() == '/register';
 
-      // if (!loggedIn && !isLoggingIn) return '/login';
+      if (!loggedIn && !isLoggingIn) return '/login';
+      if (loggedIn && isLoggingIn) {
+        // Redirect to dashboard based on role if already logged in
+        final role = UserManager.instance.role;
+        if (role == UserRole.patient) return '/patient/dashboard';
+        if (role == UserRole.doctor) return '/doctor/dashboard';
+        if (role == UserRole.pharmacy) return '/pharmacy/pending';
+        if (role == UserRole.admin) return '/admin/dashboard';
+      }
       
       return null;
     },
