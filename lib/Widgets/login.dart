@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:medi_house/enroll/UserRole.dart';
+import 'package:medi_house/helpers/UserManager.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginPage extends StatefulWidget {
@@ -57,7 +58,11 @@ class _LoginPageState extends State<LoginPage> {
 
         final role = userData['role'] as String?;
 
-        if (mounted) {
+        if (mounted && role != null) {
+          // Save user role to UserManager and SharedPreferences
+          await UserManager.instance.saveUserRole(role);
+          await UserManager.instance.loadUser(); // Refresh state
+
           if (role == 'patient') {
             context.go('/patient/dashboard');
           } else if (role == 'doctor') {
