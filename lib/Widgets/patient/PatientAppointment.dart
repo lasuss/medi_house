@@ -21,14 +21,14 @@ class MyApp extends StatelessWidget {
 }
 
 class PatientAppointment extends StatefulWidget {
-  const PatientAppointment({super.key});
+  const PatientAppointment({Key? key, this.title}) : super(key: key);
+  final String? title;
 
   @override
   State<PatientAppointment> createState() => _PatientAppointmentState();
 }
 
 class _PatientAppointmentState extends State<PatientAppointment> {
-  int _selectedIndex = 1; // Tab Lịch hẹn
 
   final TextEditingController searchController = TextEditingController();
   String selectedSpecialty = "Tất cả";
@@ -222,18 +222,6 @@ class _PatientAppointmentState extends State<PatientAppointment> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tìm bác sĩ'),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        actions: const <Widget>[
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Icon(Icons.filter_list, color: Color(0xFF2196F3)),
-          )
-        ],
-      ),
       body: Column(
         children: <Widget>[
           // Thanh tìm kiếm
@@ -295,22 +283,6 @@ class _PatientAppointmentState extends State<PatientAppointment> {
               },
             ),
           ),
-        ],
-      ),
-
-      // Bottom Navigation
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _selectedIndex,
-        selectedItemColor: const Color(0xFF2196F3),
-        unselectedItemColor: const Color(0xFF757575),
-        onTap: (int i) => setState(() => _selectedIndex = i),
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Trang chủ'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today_outlined), activeIcon: Icon(Icons.calendar_today), label: 'Lịch hẹn'),
-          BottomNavigationBarItem(icon: Icon(Icons.message_outlined), activeIcon: Icon(Icons.message), label: 'Tin nhắn'),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications_outlined), activeIcon: Icon(Icons.notifications), label: 'Thông báo'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'Tài khoản'),
         ],
       ),
     );
