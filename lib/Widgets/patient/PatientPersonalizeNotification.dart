@@ -75,13 +75,14 @@ class _PatientPersonalizeNotificationState extends State<PatientPersonalizeNotif
     return Scaffold(
       backgroundColor: const Color(0xFFFFFF),
       appBar: AppBar(
+        iconTheme: const IconThemeData(color: const Color(0xFF2196F3)),
         backgroundColor: const Color(0xFFFFFF),
         elevation: 0,
-        title: const Text(
+        title: const Center(child: Text(
           "Cá nhân hóa thông báo",
           style: TextStyle(fontSize: 22, color: Colors.blue),
-        ),
-        centerTitle: true,
+        ),)
+
       ),
 
       body: Padding(

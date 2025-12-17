@@ -94,10 +94,10 @@ class MediRouter {
             currentIndex = 1;
           } else if (location.startsWith('/patient/messages')) {
             currentIndex = 2;
-          } else if (location.startsWith('/patient/profile')) {
-            currentIndex = 4;
           } else if (location.startsWith('/patient/notifications')) {
             currentIndex = 3;
+          } else if (location.startsWith('/patient/profile')) {
+            currentIndex = 4;
           }
           // Doctor Routes
           else if (location.startsWith('/doctor/dashboard')) {
@@ -106,10 +106,10 @@ class MediRouter {
             currentIndex = 1;
           } else if (location.startsWith('/doctor/messages')) {
             currentIndex = 2;
-          } else if (location.startsWith('/doctor/profile')) {
-            currentIndex = 4;
           } else if (location.startsWith('/doctor/notifications')) {
             currentIndex = 3;
+          } else if (location.startsWith('/doctor/profile')) {
+            currentIndex = 4;
           }
           // Pharmacy Routes
           else if (location.startsWith('/pharmacy/pending')) {
@@ -148,10 +148,17 @@ class MediRouter {
           GoRoute(
             path: '/patient/profile',
             pageBuilder: (context, state) => const NoTransitionPage(child: PatientProfile()),
+              routes: [
+                GoRoute(
+                  path: 'personalize',
+                  pageBuilder: (context, state) => const MaterialPage(child: PatientPersonalizeNotification()),
+                )
+              ]
           ),
           GoRoute(
-            path: '/patient/notifications',
-            pageBuilder: (context, state) => const NoTransitionPage(child: PatientNotification()),
+              path: '/patient/notifications',
+              pageBuilder: (context, state) => const NoTransitionPage(child: PatientNotification()),
+
           ),
           GoRoute(
             path: '/patient/scan_id',
@@ -163,11 +170,7 @@ class MediRouter {
           ),
           GoRoute(
             path: '/patient/records/:id',
-            pageBuilder: (context, state) => MaterialPage(child: PatientRecordDetail(title: 'Record ${state.pathParameters[''''id''']}', patientID: '1111',)),
-          ),
-          GoRoute(
-            path: '/patient/personalize_notifications',
-            pageBuilder: (context, state) => const MaterialPage(child: PatientPersonalizeNotification()),
+            pageBuilder: (context, state) => MaterialPage(child: PatientRecordDetail(title: 'Record ${state.pathParameters['id']}', patientID: '1111',)),
           ),
           GoRoute(
             path: '/patient/show_qr',
@@ -196,7 +199,7 @@ class MediRouter {
           ),
           GoRoute(
             path: '/doctor/records/:id',
-            pageBuilder: (context, state) => MaterialPage(child: DoctorRecordDetail(title: 'Record ${state.pathParameters[''''id''']}')),
+            pageBuilder: (context, state) => MaterialPage(child: DoctorRecordDetail(title: 'Record ${state.pathParameters['id']}')),
           ),
           GoRoute(
             path: '/doctor/scan_qr',

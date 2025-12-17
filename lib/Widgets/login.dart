@@ -63,18 +63,19 @@ class _LoginPageState extends State<LoginPage> {
           await UserManager.instance.saveUserRole(role);
           await UserManager.instance.loadUser(); // Refresh state
 
-          if (role == 'patient') {
+          if ((role == 'patient') && (_selectedRole == UserRole.patient))  {
             context.go('/patient/dashboard');
-          } else if (role == 'doctor') {
+          } else if (role == 'doctor' && _selectedRole == UserRole.doctor) {
             context.go('/doctor/dashboard');
-          } else if (role == 'pharmacy') {
+          } else if (role == 'pharmacy' && _selectedRole == UserRole.pharmacy) {
             context.go('/pharmacy/pending');
           } else if (role == 'admin') {
             context.go('/admin/dashboard');
           } else {
+             // Handle role mismatch
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Không xác định được vai trò: $role'),
+              const SnackBar(
+                content: Text('Vai trò bạn chọn không đúng với tài khoản.'),
                 backgroundColor: Colors.orange,
               ),
             );
@@ -261,6 +262,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 24),
               ],
             ),
           ),

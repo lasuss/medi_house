@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:medi_house/helpers/UserManager.dart';
 class PatientDashboard extends StatefulWidget {
   const PatientDashboard({Key? key, this.title}) : super(key: key);
   final String? title;
@@ -82,32 +82,27 @@ class _PatientDashboardState extends State<PatientDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: const Padding(
-          padding: EdgeInsets.all(8.0),
-          child: CircleAvatar(
-            child: Icon(Icons.person),
-          ),
-        ),
-        title: const Text(
-          'Hồ sơ y tế',
-          style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.blue),
-            onPressed: () {
-              // Handle notification tap
-            },
-          ),
-        ],
-      ),
+
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            Center(
+              child: Column(
+            children:[
+              CircleAvatar(child: Icon(Icons.person),)
+              ,Text(
+              'Hồ sơ y tế',
+              style: TextStyle(
+                color: Colors.blue,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            )] ,
+        )
+
+            ),
+            const SizedBox(height: 20,),
             _buildSearchField(),
             const SizedBox(height: 20),
             _buildFilterChips(),

@@ -43,9 +43,6 @@ final Map<UserRole, List<NavigationItemConfig>> navigationConfigs = {
   UserRole.admin: [
     const NavigationItemConfig(icon: FontAwesomeIcons.chartPie, label: 'Dashboard', route: '/admin/dashboard'),
   ],
-  UserRole.hospital: [
-     const NavigationItemConfig(icon: FontAwesomeIcons.hospital, label: 'Dashboard', route: '/hospital/dashboard'),
-  ]
 };
 
 

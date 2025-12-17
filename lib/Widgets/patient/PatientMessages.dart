@@ -133,7 +133,7 @@ class _PatientMessagesState extends State<PatientMessages> {
                      conversation['unreadCount'].toString(),
                      style: const TextStyle(
                        color: Colors.white,
-                       fontSize: 12,
+                       fontSize: 10,
                        fontWeight: FontWeight.bold,
                      ),
                    ),
