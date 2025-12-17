@@ -137,14 +137,14 @@ class _PatientProfileState extends State<PatientProfile> {
                 icon: Icons.person_outline,
                 title: 'Chỉnh sửa hồ sơ',
                 onTap: () {
-                  // Điều hướng đến màn hình chỉnh sửa hồ sơ
+                  context.go('/patient/profile/edit');
                 },
               ),
               _buildProfileOption(
                 icon: Icons.notifications_outlined,
                 title: 'Thông báo',
                 onTap: () {
-                  context.go('/patient/notifications/personalize');
+                  context.go('/patient/profile/personalize_notification');
                 },
               ),
               _buildProfileOption(
