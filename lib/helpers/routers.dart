@@ -27,8 +27,9 @@ import 'package:medi_house/Widgets/patient/PatientMessages.dart';
 import 'package:medi_house/Widgets/patient/PatientNotification.dart';
 import 'package:medi_house/Widgets/patient/PatientPersonalizeNotification.dart';
 import 'package:medi_house/Widgets/patient/PatientProfile.dart';
+import 'package:medi_house/Widgets/patient/PatientEditProfile.dart';
 import 'package:medi_house/Widgets/patient/PatientRecordDetail.dart';
-import 'package:medi_house/Widgets/Patient/PatientScanNationalID.dart';
+import 'package:medi_house/Widgets/patient/PatientScanNationalID.dart';
 import 'package:medi_house/Widgets/patient/PatientShowQR.dart';
 
 // Pharmacy Widgets
@@ -150,8 +151,12 @@ class MediRouter {
             pageBuilder: (context, state) => const NoTransitionPage(child: PatientProfile()),
               routes: [
                 GoRoute(
-                  path: 'personalize',
+                  path: 'personalize_notification',
                   pageBuilder: (context, state) => const MaterialPage(child: PatientPersonalizeNotification()),
+                ),
+                GoRoute(
+                  path: 'edit',
+                  pageBuilder: (context, state) => const MaterialPage(child: PatientEditProfile(), fullscreenDialog: true),
                 )
               ]
           ),
@@ -160,10 +165,7 @@ class MediRouter {
               pageBuilder: (context, state) => const NoTransitionPage(child: PatientNotification()),
 
           ),
-          GoRoute(
-            path: '/patient/scan_id',
-            pageBuilder: (context, state) => const MaterialPage(child: PatientScanNationalID(), fullscreenDialog: true),
-          ),
+
           GoRoute(
             path: '/patient/records/add',
             pageBuilder: (context, state) => const MaterialPage(child: PatientAddRecord(), fullscreenDialog: true),
