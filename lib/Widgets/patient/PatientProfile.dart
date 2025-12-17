@@ -1,8 +1,9 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:medi_house/Widgets/ChangePassword.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:medi_house/helpers/UserManager.dart';
 
 class PatientProfile extends StatefulWidget {
   const PatientProfile({Key? key, this.title}) : super(key: key);
@@ -15,8 +16,8 @@ class PatientProfile extends StatefulWidget {
 class _PatientProfileState extends State<PatientProfile> {
   final _supabase = Supabase.instance.client;
   String? _avatarUrl;
-  String _userName = 'Patient Name'; // Placeholder
-  String _userEmail = 'patient.email@example.com'; // Placeholder
+  String _userName = '';
+  String _userEmail = '';
   bool _isLoading = false;
 
   @override
@@ -29,17 +30,23 @@ class _PatientProfileState extends State<PatientProfile> {
     setState(() => _isLoading = true);
     try {
       final userId = _supabase.auth.currentUser!.id;
-      final data =
-          await _supabase.from('users').select().eq('id', userId).single();
+      final data = await _supabase
+          .from('users')
+          .select('name, avatar_url') // Chỉ lấy các trường cần thiết từ hồ sơ công khai
+          .eq('id', userId)
+          .single();
+
       setState(() {
+        _userName = data['name'] ?? 'N/A';
         _avatarUrl = data['avatar_url'];
-        _userEmail = _supabase.auth.currentUser?.email ?? 'patient.email@example.com';
+        // Lấy email từ đối tượng người dùng đã xác thực để đảm bảo chính xác
+        _userEmail = _supabase.auth.currentUser!.email ?? 'N/A';
       });
     } catch (e) {
-      debugPrint('Error loading profile: $e');
+      debugPrint('Lỗi khi tải hồ sơ: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading profile: $e', style: const TextStyle(color: Colors.white)), backgroundColor: Colors.red),
+          SnackBar(content: Text('Lỗi khi tải hồ sơ: $e', style: const TextStyle(color: Colors.white)), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -50,54 +57,63 @@ class _PatientProfileState extends State<PatientProfile> {
   }
 
   Future<void> _uploadAvatar() async {
-    final picker = ImagePicker();
-    final imageFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
-    if (imageFile == null) return;
-
-    setState(() => _isLoading = true);
+    final imagePicker = ImagePicker();
+    final imageFile = await imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 50,
+    );
+    if (imageFile == null) {
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
-      final userId = _supabase.auth.currentUser!.id;
+      final bytes = await imageFile.readAsBytes();
       final fileExt = imageFile.path.split('.').last;
-      final fileName = '$userId/avatar.$fileExt';
-      
-      await _supabase.storage.from('avatars').upload(
+      final fileName = '${_supabase.auth.currentUser!.id}/avatar.$fileExt';
+      await _supabase.storage.from('avatars').uploadBinary(
             fileName,
-            File(imageFile.path),
-            fileOptions: const FileOptions(upsert: true),
+            bytes,
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
           );
-
-      final imageUrl = _supabase.storage.from('avatars').getPublicUrl(fileName);
-
-      await _supabase.from('users').update({
-        'avatar_url': imageUrl,
-      }).eq('id', userId);
-
+      final imageUrlResponse = _supabase.storage.from('avatars').getPublicUrl(fileName);
+      await _supabase.from('users').update({'avatar_url': imageUrlResponse}).eq('id', _supabase.auth.currentUser!.id);
       setState(() {
-        _avatarUrl = imageUrl;
+        _avatarUrl = imageUrlResponse;
       });
-
-      if(mounted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Cập nhật avatar thành công!'),
+        ));
+      }
+    } on StorageException catch (error) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Avatar updated successfully!', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green),
+          SnackBar(
+            content: Text(error.message),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error uploading avatar: $e', style: const TextStyle(color: Colors.white)), backgroundColor: Colors.red),
+          SnackBar(content: Text('Lỗi tải lên avatar: $e', style: const TextStyle(color: Colors.white)), backgroundColor: Theme.of(context).colorScheme.error),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
   
   Future<void> _signOut() async {
     try {
       await _supabase.auth.signOut();
+      UserManager().clearUser();
       if(mounted) {
         context.go('/login');
       }
@@ -110,14 +126,6 @@ class _PatientProfileState extends State<PatientProfile> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text(
-          'Tài khoản',
-          style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator(color: Colors.blue))
         : ListView(
@@ -127,34 +135,39 @@ class _PatientProfileState extends State<PatientProfile> {
               const SizedBox(height: 30),
               _buildProfileOption(
                 icon: Icons.person_outline,
-                title: 'Edit Profile',
+                title: 'Chỉnh sửa hồ sơ',
                 onTap: () {
-                  // Navigate to edit profile screen
+                  // Điều hướng đến màn hình chỉnh sửa hồ sơ
                 },
               ),
               _buildProfileOption(
                 icon: Icons.notifications_outlined,
-                title: 'Notifications',
+                title: 'Thông báo',
                 onTap: () {
-                  // Navigate to notification settings
+                  context.go('/patient/notifications/personalize');
                 },
               ),
               _buildProfileOption(
                 icon: Icons.lock_outline,
-                title: 'Change Password',
+                title: 'Đổi mật khẩu',
                 onTap: () {
-                  // Navigate to change password screen
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return const ChangePasswordDialog();
+                    }
+                  );
                 },
               ),
               _buildProfileOption(
                 icon: Icons.help_outline,
-                title: 'Help & Support',
+                title: 'Trợ giúp & Hỗ trợ',
                 onTap: () {},
               ),
               const Divider(height: 40),
               _buildProfileOption(
                 icon: Icons.logout,
-                title: 'Logout',
+                title: 'Đăng xuất',
                 isLogout: true,
                 onTap: _signOut,
               ),
@@ -164,15 +177,36 @@ class _PatientProfileState extends State<PatientProfile> {
   }
 
   Widget _buildProfileHeader() {
+    ImageProvider? backgroundImage;
+    // Kiểm tra xem URL avatar là một liên kết web hay data URI
+    if (_avatarUrl != null) {
+      if (_avatarUrl!.startsWith('http')) {
+        // Nếu là URL, sử dụng NetworkImage
+        backgroundImage = NetworkImage(_avatarUrl!);
+      } else if (_avatarUrl!.startsWith('data:image')) {
+        // Nếu là data URI, giải mã chuỗi base64
+        try {
+          final uri = Uri.parse(_avatarUrl!);
+          if (uri.data != null) {
+            backgroundImage = MemoryImage(uri.data!.contentAsBytes());
+          }
+        } catch (e) {
+          debugPrint('Lỗi phân tích data URI cho avatar: $e');
+          backgroundImage = null;
+        }
+      }
+    }
+
     return Column(
+      // crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         GestureDetector(
           onTap: _uploadAvatar,
           child: CircleAvatar(
             radius: 50,
             backgroundColor: Colors.grey[200],
-            backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
-            child: _avatarUrl == null
+            backgroundImage: backgroundImage,
+            child: backgroundImage == null
                 ? const Icon(Icons.person, size: 50, color: Colors.blue)
                 : null,
           ),
