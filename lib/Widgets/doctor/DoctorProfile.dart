@@ -32,16 +32,22 @@ class _DoctorProfileState extends State<DoctorProfile> {
     setState(() => _isLoading = true);
     try {
       final userId = _supabase.auth.currentUser!.id;
-      final data = await _supabase
+      final userData = await _supabase
           .from('users')
-          .select('name, avatar_url, specialty')
+          .select('name, avatar_url')
           .eq('id', userId)
           .single();
 
+      final doctorData = await _supabase
+          .from('doctor_info')
+          .select('specialty')
+          .eq('user_id', userId)
+          .single();
+
       setState(() {
-        _userName = data['name'] ?? 'N/A';
-        _avatarUrl = data['avatar_url'];
-        _userSpecialty = data['specialty'] ?? 'General Practitioner';
+        _userName = userData['name'] ?? 'N/A';
+        _avatarUrl = userData['avatar_url'];
+        _userSpecialty = doctorData['specialty'] ?? 'General Practitioner';
       });
     } catch (e) {
       debugPrint('Lỗi khi tải hồ sơ: $e');
