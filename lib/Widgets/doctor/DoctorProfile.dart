@@ -1,23 +1,148 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:medi_house/helpers/UserManager.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:medi_house/Widgets/ChangePassword.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:medi_house/helpers/UserManager.dart';
+import 'package:medi_house/Widgets/doctor/DoctorNotification.dart';
 
 class DoctorProfile extends StatefulWidget {
   const DoctorProfile({Key? key, this.title}) : super(key: key);
   final String? title;
+
   @override
   State<DoctorProfile> createState() => _DoctorProfileState();
 }
 
 class _DoctorProfileState extends State<DoctorProfile> {
+  final _supabase = Supabase.instance.client;
+  String? _avatarUrl;
+  String _userName = '';
+  String _userSpecialty = '';
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _getProfile();
+  }
+
+  Future<void> _getProfile() async {
+    setState(() => _isLoading = true);
+    try {
+      final userId = _supabase.auth.currentUser!.id;
+      final data = await _supabase
+          .from('users')
+          .select('name, avatar_url, specialty')
+          .eq('id', userId)
+          .single();
+
+      setState(() {
+        _userName = data['name'] ?? 'N/A';
+        _avatarUrl = data['avatar_url'];
+        _userSpecialty = data['specialty'] ?? 'General Practitioner';
+      });
+    } catch (e) {
+      debugPrint('Lỗi khi tải hồ sơ: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi tải hồ sơ: $e', style: const TextStyle(color: Colors.white)),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _uploadAvatar() async {
+    final imagePicker = ImagePicker();
+    final imageFile = await imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 50,
+    );
+    if (imageFile == null) {
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final bytes = await imageFile.readAsBytes();
+      final fileExt = imageFile.path.split('.').last;
+      final fileName = '${_supabase.auth.currentUser!.id}/avatar.$fileExt';
+      await _supabase.storage.from('avatars').uploadBinary(
+        fileName,
+        bytes,
+        fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+      );
+      final imageUrlResponse = _supabase.storage.from('avatars').getPublicUrl(fileName);
+      await _supabase.from('users').update({'avatar_url': imageUrlResponse}).eq('id', _supabase.auth.currentUser!.id);
+      setState(() {
+        _avatarUrl = imageUrlResponse;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Cập nhật avatar thành công!'),
+        ));
+      }
+    } on StorageException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.message),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi tải lên avatar: $e', style: const TextStyle(color: Colors.white)),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _signOut() async {
+    try {
+      await _supabase.auth.signOut();
+      UserManager().clearUser();
+      if (mounted) {
+        context.go('/login');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi đăng xuất: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      body: SingleChildScrollView(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF3182CE)))
+          : SingleChildScrollView(
         child: Column(
           children: [
             // Header with Profile Info
@@ -33,38 +158,11 @@ class _DoctorProfileState extends State<DoctorProfile> {
               ),
               child: Column(
                 children: [
-                   Stack(
-                    children: [
-                       Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.blue.withOpacity(0.2), width: 2),
-                        ),
-                        child: const CircleAvatar(
-                          radius: 50,
-                          backgroundColor: Color(0xFFE2E8F0),
-                          child:  FaIcon(FontAwesomeIcons.userDoctor, size: 50, color: Color(0xFFCBD5E0)),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF3182CE),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
-                        ),
-                      ),
-                    ],
-                  ),
+                  _buildProfileHeader(),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Dr. John Smith',
-                    style: TextStyle(
+                  Text(
+                    _userName,
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF2D3748),
@@ -72,7 +170,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Cardiologist',
+                    _userSpecialty,
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey[600],
@@ -82,31 +180,120 @@ class _DoctorProfileState extends State<DoctorProfile> {
               ),
             ),
             const SizedBox(height: 20),
-            
+
             // Settings Options
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 children: [
                   _buildSectionHeader('Account Settings'),
-                  _buildSettingsItem(Icons.person_outline, 'Personal Information', () {}),
-                  _buildSettingsItem(Icons.lock_outline, 'Change Password', () {}),
-                  _buildSettingsItem(Icons.notifications_none, 'Notifications', () {}),
+                  _buildSettingsItem(
+                    Icons.person_outline,
+                    'Chỉnh sửa hồ sơ cá nhân',
+                        () {
+                      context.go('/doctor/profile/edit');
+                    },
+                  ),
+                  _buildSettingsItem(
+                    Icons.lock_outline,
+                    'Đổi mật khẩu',
+                        () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return const ChangePasswordDialog();
+                        },
+                      );
+                    },
+                  ),
+                  _buildSettingsItem(
+                    Icons.notifications_none,
+                    'Thông báo',
+                        () {
+                      context.go('/doctor/notifications');
+                    },
+                  ),
                   const SizedBox(height: 20),
                   _buildSectionHeader('General'),
-                  _buildSettingsItem(Icons.privacy_tip_outlined, 'Privacy Policy', () {}),
-                  _buildSettingsItem(Icons.help_outline, 'Help & Support', () {}),
+                  _buildSettingsItem(
+                    Icons.privacy_tip_outlined,
+                    'Chính sách bảo mật',
+                        () {},
+                  ),
+                  _buildSettingsItem(
+                    Icons.help_outline,
+                    'Trợ giúp & Hỗ trợ',
+                        () {},
+                  ),
                   const SizedBox(height: 20),
-                   _buildSettingsItem(Icons.logout, 'Logout', () {
-                      UserManager.instance.clearUser();
-                      context.go('/login');
-                   }, textColor: Colors.red, iconColor: Colors.red),
+                  _buildSettingsItem(
+                    Icons.logout,
+                    'Đăng xuất',
+                    _signOut,
+                    textColor: Colors.red,
+                    iconColor: Colors.red,
+                  ),
                 ],
               ),
             ),
-             const SizedBox(height: 30),
+            const SizedBox(height: 30),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader() {
+    ImageProvider? backgroundImage;
+
+    if (_avatarUrl != null) {
+      if (_avatarUrl!.startsWith('http')) {
+        backgroundImage = NetworkImage(_avatarUrl!);
+      } else if (_avatarUrl!.startsWith('data:image')) {
+        try {
+          final uri = Uri.parse(_avatarUrl!);
+          if (uri.data != null) {
+            backgroundImage = MemoryImage(uri.data!.contentAsBytes());
+          }
+        } catch (e) {
+          debugPrint('Lỗi phân tích data URI cho avatar: $e');
+          backgroundImage = null;
+        }
+      }
+    }
+
+    return GestureDetector(
+      onTap: _uploadAvatar,
+      child: Stack(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.blue.withOpacity(0.2), width: 2),
+            ),
+            child: CircleAvatar(
+              radius: 50,
+              backgroundColor: const Color(0xFFE2E8F0),
+              backgroundImage: backgroundImage,
+              child: backgroundImage == null
+                  ? const FaIcon(FontAwesomeIcons.userDoctor, size: 50, color: Color(0xFFCBD5E0))
+                  : null,
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: const BoxDecoration(
+                color: Color(0xFF3182CE),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -128,7 +315,13 @@ class _DoctorProfileState extends State<DoctorProfile> {
     );
   }
 
-  Widget _buildSettingsItem(IconData icon, String title, VoidCallback onTap, {Color textColor = const Color(0xFF2D3748), Color iconColor = const Color(0xFF4A5568)}) {
+  Widget _buildSettingsItem(
+      IconData icon,
+      String title,
+      VoidCallback onTap, {
+        Color textColor = const Color(0xFF2D3748),
+        Color iconColor = const Color(0xFF4A5568),
+      }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
