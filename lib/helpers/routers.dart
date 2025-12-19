@@ -18,6 +18,8 @@ import 'package:medi_house/Widgets/doctor/DoctorProfile.dart';
 import 'package:medi_house/Widgets/doctor/DoctorRecordDetail.dart';
 import 'package:medi_house/Widgets/doctor/DoctorScanQR.dart';
 import 'package:medi_house/Widgets/doctor/DoctorSchedule.dart';
+import 'package:medi_house/Widgets/doctor/DoctorEditProfile.dart';
+import 'package:medi_house/Widgets/doctor/DoctorScanNationalID.dart';
 
 // Patient Widgets
 import 'package:medi_house/Widgets/patient/PatientAddRecord.dart';
@@ -194,6 +196,15 @@ class MediRouter {
           GoRoute(
             path: '/doctor/profile',
             pageBuilder: (context, state) => const NoTransitionPage(child: DoctorProfile()),
+            routes: [
+              GoRoute(
+                path: 'edit',
+                pageBuilder: (context, state) => const MaterialPage(
+                    child: DoctorEditProfile(),
+                    fullscreenDialog: true
+                ),
+              ),
+            ],
           ),
           GoRoute(
             path: '/doctor/notifications',
