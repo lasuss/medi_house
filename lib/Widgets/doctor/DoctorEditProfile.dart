@@ -33,6 +33,7 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
   final TextEditingController _educationController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
   final TextEditingController _clinicAddressController = TextEditingController();
+
   String? _avatarUrl;
 
   // Specialty options
@@ -64,31 +65,40 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
         return;
       }
 
-      final data = await Supabase.instance.client
+      final userData = await Supabase.instance.client
           .from('users')
           .select()
           .eq('id', userId)
           .single();
 
+      final doctorData = await Supabase.instance.client
+          .from('doctor_info')
+          .select()
+          .eq('user_id', userId)
+          .single();
+
       if (mounted) {
         setState(() {
           // Personal info from CCCD
-          _nameController.text = data['name'] ?? '';
-          _idController.text = data['national_id'] ?? '';
-          _dobController.text = data['dob'] ?? '';
-          _genderController.text = data['gender'] ?? '';
-          _addressController.text = data['address'] ?? '';
+          _nameController.text = userData['name'] ?? '';
+          _idController.text = userData['national_id'] ?? '';
+          _dobController.text = userData['dob'] ?? '';
+          _genderController.text = userData['gender'] ?? '';
+          _addressController.text = userData['address'] ?? '';
 
-          // Contact & Professional info
-          _emailController.text = data['email'] ?? '';
-          _phoneController.text = data['phone'] ?? '';
-          _specialtyController.text = data['specialty'] ?? '';
-          _licenseNumberController.text = data['license_number'] ?? '';
-          _experienceController.text = data['experience_years']?.toString() ?? '';
-          _educationController.text = data['education'] ?? '';
-          _bioController.text = data['bio'] ?? '';
-          _clinicAddressController.text = data['clinic_address'] ?? '';
-          _avatarUrl = data['avatar_url'] ?? '';
+          // Contact info
+          _emailController.text = userData['email'] ?? '';
+          _phoneController.text = userData['phone'] ?? '';
+
+          // Professional info
+          _specialtyController.text = doctorData['specialty'] ?? '';
+          _licenseNumberController.text = doctorData['license_number'] ?? '';
+          _experienceController.text = doctorData['experience_years']?.toString() ?? '';
+          _educationController.text = doctorData['education'] ?? '';
+          _bioController.text = doctorData['bio'] ?? '';
+          _clinicAddressController.text = doctorData['clinic_address'] ?? '';
+
+          _avatarUrl = userData['avatar_url'] ?? '';
           _isLoading = false;
         });
       }
@@ -127,9 +137,11 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
       source: ImageSource.gallery,
       imageQuality: 50,
     );
+
     if (imageFile == null) {
       return;
     }
+
     setState(() {
       _isLoading = true;
     });
@@ -137,17 +149,16 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
     try {
       final bytes = await imageFile.readAsBytes();
       final fileExt = imageFile.path.split('.').last;
-
       final userId = UserManager.instance.supabaseUser?.id;
       if (userId == null) return;
 
       final fileName = '$userId/avatar.$fileExt';
-
       await Supabase.instance.client.storage.from('avatars').uploadBinary(
         fileName,
         bytes,
         fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
       );
+
       final imageUrlResponse = Supabase.instance.client.storage.from('avatars').getPublicUrl(fileName);
 
       setState(() {
@@ -160,7 +171,6 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
           const SnackBar(content: Text('Đã cập nhật avatar thành công!')),
         );
       }
-
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -188,7 +198,6 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
 
     if (result == true) {
       await _fetchUserData();
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Đã cập nhật thông tin từ CCCD!')),
@@ -272,9 +281,7 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
                         radius: 50,
                         backgroundColor: Colors.blue.withOpacity(0.1),
                         backgroundImage: avatarImage,
-                        child: avatarImage == null
-                            ? const Icon(Icons.person, size: 50, color: Colors.blue)
-                            : null,
+                        child: avatarImage == null ? const Icon(Icons.person, size: 50, color: Colors.blue) : null,
                       ),
                       Positioned(
                         bottom: 0,
@@ -336,20 +343,19 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
               ),
               const SizedBox(height: 16),
               _buildTextField('Địa chỉ thường trú', _addressController, icon: Icons.location_on_outlined, maxLines: 2, readOnly: true),
-
               const SizedBox(height: 24),
+
               // Contact Info
               _buildSectionTitle('Thông tin liên hệ'),
               const SizedBox(height: 12),
               _buildTextField('Email', _emailController, icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress, readOnly: true),
               const SizedBox(height: 16),
               _buildTextField('Số điện thoại', _phoneController, icon: Icons.phone_outlined, keyboardType: TextInputType.phone),
-
               const SizedBox(height: 24),
+
               // Professional Info
               _buildSectionTitle('Thông tin chuyên môn'),
               const SizedBox(height: 12),
-
               GestureDetector(
                 onTap: _showSpecialtyPicker,
                 child: AbsorbPointer(
@@ -366,8 +372,8 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
               _buildTextField('Giới thiệu bản thân', _bioController, icon: Icons.description_outlined, maxLines: 4),
               const SizedBox(height: 16),
               _buildTextField('Địa chỉ phòng khám', _clinicAddressController, icon: Icons.location_city_outlined, maxLines: 2),
-
               const SizedBox(height: 32),
+
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -384,24 +390,32 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
                             experienceYears = int.tryParse(_experienceController.text);
                           }
 
-                          await Supabase.instance.client.from('doctor_information').update({
-                            // Personal info from CCCD
+                          // 1. Cập nhật bảng users (Thông tin cá nhân)
+                          await Supabase.instance.client
+                              .from('users')
+                              .update({
                             'name': _nameController.text,
                             'national_id': _idController.text,
                             'dob': _dobController.text,
                             'gender': _genderController.text,
                             'address': _addressController.text,
-                            // Contact info
                             'phone': _phoneController.text,
-                            // Professional info
+                            'avatar_url': _avatarUrl,
+                          })
+                              .eq('id', userId);
+
+                          // 2. Cập nhật bảng doctor_info (Thông tin chuyên môn)
+                          await Supabase.instance.client
+                              .from('doctor_info')
+                              .update({
                             'specialty': _specialtyController.text,
                             'license_number': _licenseNumberController.text,
                             'experience_years': experienceYears,
                             'education': _educationController.text,
                             'bio': _bioController.text,
                             'clinic_address': _clinicAddressController.text,
-                            'avatar_url': _avatarUrl,
-                          }).eq('id', userId);
+                          })
+                              .eq('user_id', userId);
 
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
