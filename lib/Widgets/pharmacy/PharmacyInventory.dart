@@ -1,5 +1,8 @@
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:medi_house/Widgets/model/Inventory.dart';
 
 class PharmacyInventory extends StatefulWidget {
   const PharmacyInventory({Key? key, this.title}) : super(key: key);
@@ -9,23 +12,62 @@ class PharmacyInventory extends StatefulWidget {
 }
 
 class _PharmacyInventoryState extends State<PharmacyInventory> {
-  // Mock data for inventory
-  final List<Map<String, dynamic>> _inventory = [
-    {'name': 'Panadol Extra', 'stock': 150, 'unit': 'box', 'status': 'Good'},
-    {'name': 'Amoxicillin 500mg', 'stock': 20, 'unit': 'box', 'status': 'Low'},
-    {'name': 'Vitamin C 1000mg', 'stock': 45, 'unit': 'tube', 'status': 'Warning'},
-    {'name': 'Berberin', 'stock': 200, 'unit': 'bottle', 'status': 'Good'},
-    {'name': 'Insulin Pen', 'stock': 8, 'unit': 'pen', 'status': 'Low'},
-    {'name': 'Cough Syrup', 'stock': 35, 'unit': 'bottle', 'status': 'Warning'},
-  ];
+  final _supabase = Supabase.instance.client;
+  List<Inventory> _inventoryList = [];
+  bool _isLoading = true;
+  String _searchQuery = '';
 
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Good': return Colors.green;
-      case 'Warning': return Colors.orange;
-      case 'Low': return Colors.red;
-      default: return Colors.grey;
+  @override
+  void initState() {
+    super.initState();
+    _fetchInventory();
+  }
+
+  Future<void> _fetchInventory() async {
+    setState(() => _isLoading = true);
+    try {
+      final user = _supabase.auth.currentUser;
+      print('Current User ID: ${user?.id}');
+      
+      final response = await _supabase
+          .from('inventory')
+          .select('*, medicines(*)')
+          .order('quantity', ascending: true);
+      
+      print('Inventory Response: $response'); // Debug print
+
+      final data = response as List<dynamic>;
+      setState(() {
+        _inventoryList = data.map((e) => Inventory.fromJson(e)).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error fetching inventory: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
     }
+  }
+
+  Color _getStatusColor(int quantity) {
+    if (quantity <= 10) return Colors.red;
+    if (quantity <= 50) return Colors.orange;
+    return Colors.green;
+  }
+
+  String _getStatusText(int quantity) {
+    if (quantity <= 10) return 'Low';
+    if (quantity <= 50) return 'Warning';
+    return 'Good';
+  }
+
+  List<Inventory> get _filteredInventory {
+    if (_searchQuery.isEmpty) return _inventoryList;
+    return _inventoryList.where((item) {
+      final name = item.medicine?.name.toLowerCase() ?? '';
+      return name.contains(_searchQuery.toLowerCase());
+    }).toList();
   }
 
   @override
@@ -50,8 +92,9 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
                   ),
                 ],
               ),
-              child: const TextField(
-                decoration: InputDecoration(
+              child: TextField(
+                onChanged: (value) => setState(() => _searchQuery = value),
+                decoration: const InputDecoration(
                   hintText: 'Search medicine...',
                   border: InputBorder.none,
                   icon: Icon(Icons.search, color: Colors.grey),
@@ -64,21 +107,30 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildStatCard('Total Items', '${_inventory.length}', Colors.blue),
-                _buildStatCard('Low Stock', '2', Colors.red),
+                _buildStatCard('Total Items', '${_inventoryList.length}', Colors.blue),
+                _buildStatCard(
+                  'Low Stock', 
+                  '${_inventoryList.where((i) => i.quantity <= 10).length}', 
+                  Colors.red
+                ),
               ],
             ),
             const SizedBox(height: 20),
 
             // Inventory List
             Expanded(
-              child: ListView.builder(
-                itemCount: _inventory.length,
+              child: _isLoading 
+              ? const Center(child: CircularProgressIndicator())
+              : ListView.builder(
+                itemCount: _filteredInventory.length,
                 itemBuilder: (context, index) {
-                  final item = _inventory[index];
+                  final item = _filteredInventory[index];
+                  final medicineName = item.medicine?.name ?? 'Unknown Medicine';
+                  final unit = item.medicine?.unit ?? 'unit';
+                  
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
-                    elevation: 0, // Flat design for list
+                    elevation: 0, 
                     color: Colors.white,
                      shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -94,20 +146,21 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
                         child: const FaIcon(FontAwesomeIcons.pills, color: Colors.blue, size: 16),
                       ),
                       title: Text(
-                        item['name'],
+                        medicineName,
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      subtitle: Text('${item['stock']} ${item['unit']} available'),
+                      subtitle: Text('${item.quantity} $unit available' + (item.expiryDate != null ? '\nExp: ${item.expiryDate!.day}/${item.expiryDate!.month}/${item.expiryDate!.year}' : '')),
+                      isThreeLine: item.expiryDate != null,
                       trailing: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: _getStatusColor(item['status']).withOpacity(0.1),
+                          color: _getStatusColor(item.quantity).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          item['status'],
+                          _getStatusText(item.quantity),
                           style: TextStyle(
-                            color: _getStatusColor(item['status']),
+                            color: _getStatusColor(item.quantity),
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
                           ),
@@ -122,9 +175,133 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: _showAddMedicineDialog,
         backgroundColor: const Color(0xFF38B2AC),
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Future<void> _showAddMedicineDialog() async {
+    final _formKey = GlobalKey<FormState>();
+    final _nameController = TextEditingController();
+    final _ingredientController = TextEditingController();
+    final _quantityController = TextEditingController();
+    final _unitController = TextEditingController();
+    final _priceController = TextEditingController();
+    final _expiryController = TextEditingController();
+    DateTime? _selectedExpiryDate;
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add New Medicine'),
+        content: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(labelText: 'Medicine Name', border: OutlineInputBorder()),
+                  validator: (value) => value?.isEmpty == true ? 'Required' : null,
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _ingredientController,
+                  decoration: const InputDecoration(labelText: 'Active Ingredient', border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _quantityController,
+                        decoration: const InputDecoration(labelText: 'Quantity', border: OutlineInputBorder()),
+                        keyboardType: TextInputType.number,
+                        validator: (value) => value?.isEmpty == true ? 'Required' : null,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _unitController,
+                        decoration: const InputDecoration(labelText: 'Unit (e.g., Box)', border: OutlineInputBorder()),
+                        validator: (value) => value?.isEmpty == true ? 'Required' : null,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _priceController,
+                  decoration: const InputDecoration(labelText: 'Price', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _expiryController,
+                  readOnly: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Expiry Date', 
+                    border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.calendar_today),
+                  ),
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now().add(const Duration(days: 365)),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+                    );
+                    if (date != null) {
+                      _selectedExpiryDate = date;
+                      _expiryController.text = "${date.day}/${date.month}/${date.year}";
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              if (_formKey.currentState!.validate()) {
+                try {
+                  // 1. Insert Medicine
+                  final medicineRes = await _supabase.from('medicines').insert({
+                    'name': _nameController.text,
+                    'active_ingredient': _ingredientController.text,
+                    'unit': _unitController.text,
+                    'price': double.tryParse(_priceController.text),
+                  }).select().single(); // select() needed to get ID back
+
+                  final medicineId = medicineRes['id'];
+
+                  // 2. Insert Inventory
+                  await _supabase.from('inventory').insert({
+                    'medicine_id': medicineId,
+                    'quantity': int.parse(_quantityController.text),
+                    'expiry_date': _selectedExpiryDate?.toIso8601String(),
+                  });
+
+                  if (mounted) {
+                    Navigator.pop(context);
+                    _fetchInventory(); // Refresh list
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added successfully')));
+                  }
+                } catch (e) {
+                  debugPrint('Error adding medicine: $e');
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                }
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
       ),
     );
   }

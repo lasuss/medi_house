@@ -1,50 +1,99 @@
-//have access on Doctor Bottom Navigation
 
-import 'package:flutter/material.dart';
+import  'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:medi_house/Widgets/model/PatientChatScreen.dart'; // Reuse for now
+import 'package:medi_house/Widgets/model/Message.dart';
 
 class DoctorMessages extends StatefulWidget {
   const DoctorMessages({Key? key, this.title}) : super(key: key);
   final String? title;
+
   @override
   State<DoctorMessages> createState() => _DoctorMessagesState();
 }
 
 class _DoctorMessagesState extends State<DoctorMessages> {
-  // Mock data for messages
-  final List<Map<String, dynamic>> _messages = [
-    {
-      'sender': 'Nguyen Van A',
-      'message': 'Thank you, Doctor. Does he need any medication?',
-      'time': '10:30 AM',
-      'unread': 2,
-      'isOnline': true,
-      'image': null
-    },
-    {
-      'sender': 'Tran Thi B',
-      'message': 'I will book an appointment for next week.',
-      'time': 'Yesterday',
-      'unread': 0,
-      'isOnline': false,
-      'image': null
-    },
-    {
-      'sender': 'Le Van C',
-      'message': 'The pain has subsided significantly.',
-      'time': 'Yesterday',
-      'unread': 0,
-      'isOnline': true,
-      'image': null
-    },
-    {
-      'sender': 'Pham Thi D',
-      'message': 'Can I reschedule my appointment?',
-      'time': 'Oct 20',
-      'unread': 1,
-      'isOnline': false,
-      'image': null
-    },
-  ];
+  final _supabase = Supabase.instance.client;
+  late final String _myId;
+  Map<String, Map<String, dynamic>> _userCache = {};
+  late Stream<List<Map<String, dynamic>>> _conversationsStream;
+  String _filter = 'All'; // 'All', 'Unread', 'Patients'
+
+  @override
+  void initState() {
+    super.initState();
+    _myId = _supabase.auth.currentUser!.id;
+    _setupConversationsStream();
+  }
+
+  void _setupConversationsStream() {
+    _conversationsStream = _supabase
+        .from('messages')
+        .stream(primaryKey: ['id'])
+        .order('created_at', ascending: false)
+        .asyncMap((data) async {
+          final messages = data.map((e) => Message.fromJson(e)).toList();
+          final myMessages = messages.where((m) => m.senderId == _myId || m.receiverId == _myId).toList();
+
+          // Group by other user and count unread
+          final Map<String, Message> lastMessages = {};
+          final Map<String, int> unreadCounts = {};
+          final Set<String> userIdsToFetch = {};
+
+          for (var msg in myMessages) {
+            final otherId = msg.senderId == _myId ? msg.receiverId : msg.senderId;
+            
+            // Track unread
+            if (msg.receiverId == _myId && !msg.isRead) {
+               unreadCounts[otherId] = (unreadCounts[otherId] ?? 0) + 1;
+            }
+
+            if (!lastMessages.containsKey(otherId)) {
+              lastMessages[otherId] = msg;
+              userIdsToFetch.add(otherId);
+            }
+          }
+
+          final idsToQuery = userIdsToFetch.where((id) => !_userCache.containsKey(id)).toList();
+          if (idsToQuery.isNotEmpty) {
+             try {
+                final response = await _supabase
+                  .from('users')
+                  .select('id, name, avatar_url, role')
+                  .filter('id', 'in', idsToQuery);
+                for (var user in response) {
+                  _userCache[user['id']] = user;
+                }
+             } catch (e) {
+               debugPrint('Error fetching users: $e');
+             }
+          }
+
+          return lastMessages.entries.map((entry) {
+            final otherId = entry.key;
+            final message = entry.value;
+            final user = _userCache[otherId] ?? {'name': 'Unknown', 'avatar_url': null, 'role': 'User'};
+            
+            return {
+              'userId': otherId,
+              'name': user['name'],
+              'avatar': user['avatar_url'],
+              'role': user['role'],
+              'lastMessage': message.content,
+              'time': _formatTime(message.createdAt.toLocal()), // Convert to local
+              'unreadCount': unreadCounts[otherId] ?? 0,
+            };
+          }).toList();
+        });
+  }
+  
+  String _formatTime(DateTime time) {
+    final now = DateTime.now();
+    if (time.year == now.year && time.month == now.month && time.day == now.day) {
+      return "${time.hour}:${time.minute.toString().padLeft(2, '0')}";
+    }
+    return "${time.day}/${time.month} ${time.hour}:${time.minute.toString().padLeft(2, '0')}";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +123,6 @@ class _DoctorMessagesState extends State<DoctorMessages> {
       ),
       body: Column(
         children: [
-          // Filter Chips
           Container(
             color: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -82,143 +130,132 @@ class _DoctorMessagesState extends State<DoctorMessages> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _buildFilterChip('All', true),
+                  _buildFilterChip('All', _filter == 'All'),
                   const SizedBox(width: 8),
-                  _buildFilterChip('Unread', false),
+                  _buildFilterChip('Unread', _filter == 'Unread'),
                   const SizedBox(width: 8),
-                  _buildFilterChip('Patients', false),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Groups', false),
+                  _buildFilterChip('Patients', _filter == 'Patients'),
                 ],
               ),
             ),
           ),
           Expanded(
-            child: ListView.separated(
-              itemCount: _messages.length,
-              separatorBuilder: (context, index) =>
-                  const Divider(height: 1, indent: 82),
-              itemBuilder: (context, index) {
-                final msg = _messages[index];
-                return InkWell(
-                  onTap: () {
-                    // Navigate to chat detail
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        Stack(
-                          children: [
-                            Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                color: Colors.blue[100],
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  msg['sender'].substring(0, 1),
-                                  style: TextStyle(
-                                    color: Colors.blue[800],
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 24,
-                                  ),
-                                ),
+            child: StreamBuilder<List<Map<String, dynamic>>>(
+              stream: _conversationsStream,
+              builder: (context, snapshot) {
+                 if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
+                 if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                 
+                 final allConversations = snapshot.data!;
+                 final conversations = _filterConversations(allConversations);
+
+                 if (conversations.isEmpty) return const Center(child: Text('No messages'));
+
+                 return ListView.separated(
+                  itemCount: conversations.length,
+                  separatorBuilder: (context, index) => const Divider(height: 1, indent: 82),
+                  itemBuilder: (context, index) {
+                    final conversation = conversations[index];
+                    final bool isUnread = (conversation['unreadCount'] as int) > 0;
+                    
+                    return InkWell(
+                      onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PatientChatScreen(
+                                name: conversation['name'],
+                                receiverId: conversation['userId'],
+                                avatarUrl: conversation['avatar'],
                               ),
                             ),
-                            if (msg['isOnline'])
-                              Positioned(
-                                right: 2,
-                                bottom: 2,
-                                child: Container(
-                                  width: 14,
-                                  height: 14,
-                                  decoration: BoxDecoration(
-                                    color: Colors.green,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                        color: Colors.white, width: 2),
-                                  ),
+                          );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          children: [
+                            Stack(
+                              children: [
+                                CircleAvatar(
+                                    radius: 28, 
+                                    backgroundColor: Colors.blue[100],
+                                    backgroundImage: conversation['avatar'] != null 
+                                        ? NetworkImage(conversation['avatar']) 
+                                        : null,
+                                    child: conversation['avatar'] == null
+                                        ? Text(
+                                            (conversation['name'] as String).isNotEmpty 
+                                                ? (conversation['name'] as String)[0].toUpperCase() 
+                                                : '?',
+                                            style: TextStyle(
+                                              color: Colors.blue[800],
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 24,
+                                            ),
+                                          )
+                                        : null,
                                 ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    msg['sender'],
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: Color(0xFF2D3748),
-                                    ),
-                                  ),
-                                  Text(
-                                    msg['time'],
-                                    style: TextStyle(
-                                      color: msg['unread'] > 0
-                                          ? Colors.blue
-                                          : Colors.grey[500],
-                                      fontSize: 12,
-                                      fontWeight: msg['unread'] > 0
-                                          ? FontWeight.w600
-                                          : FontWeight.normal,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      msg['message'],
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: msg['unread'] > 0
-                                            ? const Color(0xFF2D3748)
-                                            : Colors.grey[600],
-                                        fontWeight: msg['unread'] > 0
-                                            ? FontWeight.w600
-                                            : FontWeight.normal,
-                                      ),
-                                    ),
-                                  ),
-                                  if (msg['unread'] > 0)
-                                    Container(
-                                      margin: const EdgeInsets.only(left: 8),
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: const BoxDecoration(
+                                if (isUnread)
+                                  Positioned(
+                                    right: 0,
+                                    top: 0,
+                                    child: Container(
+                                      width: 14,
+                                      height: 14,
+                                      decoration: BoxDecoration(
                                         color: Colors.blue,
                                         shape: BoxShape.circle,
-                                      ),
-                                      child: Text(
-                                        msg['unread'].toString(),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        border: Border.all(color: Colors.white, width: 2),
                                       ),
                                     ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        conversation['name'],
+                                        style: TextStyle(
+                                          fontWeight: isUnread ? FontWeight.w800 : FontWeight.bold, // Already bold, but make it blacker?
+                                          fontSize: 16,
+                                          color: isUnread ? Colors.black : const Color(0xFF2D3748),
+                                        ),
+                                      ),
+                                      Text(
+                                        conversation['time'],
+                                        style: TextStyle(
+                                          color: isUnread ? Colors.blue : Colors.grey[500],
+                                          fontSize: 12,
+                                          fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    conversation['lastMessage'],
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: isUnread ? Colors.black87 : Colors.grey[600],
+                                      fontWeight: isUnread ? FontWeight.w700 : FontWeight.normal,
+                                    ),
+                                  ),
                                 ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  },
                 );
               },
             ),
@@ -228,19 +265,28 @@ class _DoctorMessagesState extends State<DoctorMessages> {
     );
   }
 
+  List<Map<String, dynamic>> _filterConversations(List<Map<String, dynamic>> all) {
+    if (_filter == 'Unread') return all.where((c) => (c['unreadCount'] as int) > 0).toList();
+    if (_filter == 'Patients') return all.where((c) => c['role'] == 'patient').toList();
+    return all;
+  }
+
   Widget _buildFilterChip(String label, bool isSelected) {
-    return Chip(
-      label: Text(
-        label,
-        style: TextStyle(
-          color: isSelected ? Colors.white : const Color(0xFF2D3748),
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+    return GestureDetector(
+      onTap: () => setState(() => _filter = label),
+      child: Chip(
+        label: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : const Color(0xFF2D3748),
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
         ),
+        backgroundColor:
+            isSelected ? const Color(0xFF3182CE) : const Color(0xFFEDF2F7),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        side: BorderSide.none,
       ),
-      backgroundColor:
-          isSelected ? const Color(0xFF3182CE) : const Color(0xFFEDF2F7),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      side: BorderSide.none,
     );
   }
 }
