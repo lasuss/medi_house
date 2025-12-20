@@ -31,6 +31,9 @@ import 'package:medi_house/Widgets/patient/PatientEditProfile.dart';
 import 'package:medi_house/Widgets/patient/PatientRecordDetail.dart';
 import 'package:medi_house/Widgets/patient/PatientScanNationalID.dart';
 import 'package:medi_house/Widgets/patient/PatientShowQR.dart';
+import 'package:medi_house/Widgets/patient/PatientHelpCenter.dart';
+import 'package:medi_house/Widgets/patient/TermsOfService.dart';
+import 'package:medi_house/Widgets/patient/PrivacyPolicy.dart';
 
 // Pharmacy Widgets
 import 'package:medi_house/Widgets/pharmacy/PharmacyFilled.dart';
@@ -157,7 +160,21 @@ class MediRouter {
                 GoRoute(
                   path: 'edit',
                   pageBuilder: (context, state) => const MaterialPage(child: PatientEditProfile(), fullscreenDialog: true),
-                )
+                ),
+                GoRoute(
+                  path: 'help_center',
+                  pageBuilder: (context, state) => const MaterialPage(child: PatientHelpCenter()),
+                  routes: [
+                    GoRoute(
+                      path: 'terms',
+                      pageBuilder: (context, state) => const MaterialPage(child: TermsOfService()),
+                    ),
+                    GoRoute(
+                      path: 'privacy',
+                      pageBuilder: (context, state) => const MaterialPage(child: PrivacyPolicy()),
+                    ),
+                  ],
+                ),
               ]
           ),
           GoRoute(

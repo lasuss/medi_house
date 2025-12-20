@@ -162,7 +162,9 @@ class _PatientProfileState extends State<PatientProfile> {
               _buildProfileOption(
                 icon: Icons.help_outline,
                 title: 'Trợ giúp & Hỗ trợ',
-                onTap: () {},
+                onTap: () {
+                  context.go('/patient/profile/help_center');
+                },
               ),
               const Divider(height: 40),
               _buildProfileOption(

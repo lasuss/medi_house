@@ -244,7 +244,7 @@ class _PatientEditProfileState extends State<PatientEditProfile> {
               ),
               const SizedBox(height: 24),
               
-              _buildSectionTitle('Thông tin cá nhân (Từ CCCD)'),
+              _buildSectionTitle('Thông tin cá nhân'),
               const SizedBox(height: 12),
               _buildTextField('Họ và tên', _nameController, icon: Icons.person_outline, readOnly: true),
               const SizedBox(height: 16),
@@ -347,7 +347,7 @@ class _PatientEditProfileState extends State<PatientEditProfile> {
       keyboardType: keyboardType,
       maxLines: maxLines,
       readOnly: readOnly,
-      style: const TextStyle(fontSize: 10), // Keep user's font size choice
+      style: const TextStyle(fontSize: 12), // Sửa font size ở chỗ này
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: icon != null ? Icon(icon, color: Colors.grey[500], size: 20) : null,

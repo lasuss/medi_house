@@ -1,0 +1,94 @@
+users
+
+id — uuid, NOT NULL (primary key), default: gen_random_uuid()
+name — text, nullable
+email — text, nullable, UNIQUE
+phone — text, nullable
+role — text, nullable, check constraint: must be one of ('patient','doctor','pharmacy','admin')
+avatar_url — text, nullable
+created_at — timestamp, nullable, default: now()
+address — text, nullable
+national_id — text, nullable
+dob — date, nullable
+gender — text, nullable
+foreign keys referencing users.id: appointments.doctor_id, prescriptions.patient_id, appointments.patient_id, messages.receiver_id, messages.sender_id, prescriptions.doctor_id, records.patient_id, records.doctor_id
+----
+
+records
+
+id — uuid, NOT NULL (primary key), default: gen_random_uuid()
+patient_id — uuid, nullable, FK -> users.id
+doctor_id — uuid, nullable, FK -> users.id
+symptoms — text, nullable
+diagnosis — text, nullable
+notes — text, nullable
+created_at — timestamp, nullable, default: now()
+updated_at — timestamp, nullable, default: now()
+foreign keys: prescriptions.record_id -> records.id
+
+
+----
+prescriptions
+
+id — uuid, NOT NULL (primary key), default: gen_random_uuid()
+record_id — uuid, nullable, FK -> records.id
+doctor_id — uuid, nullable, FK -> users.id
+patient_id — uuid, nullable, FK -> users.id
+
+instructions — text, nullable
+status — text, nullable, default: 'Pending'
+created_at — timestamp, nullable, default: now()
+
+---
+appointments
+
+id — uuid, NOT NULL (primary key), default: gen_random_uuid()
+patient_id — uuid, nullable, FK -> users.id
+doctor_id — uuid, nullable, FK -> users.id
+date — timestamp, nullable
+status — text, nullable
+created_at — timestamp, nullable, default: now()
+
+
+---
+messages
+
+id — uuid, NOT NULL (primary key), default: gen_random_uuid()
+sender_id — uuid, (nullable not listed explicitly), FK -> users.id
+receiver_id — uuid, (nullable not listed explicitly), FK -> users.id
+content — text
+created_at — timestamp, nullable, default: now()
+
+---
+create table public.medicines (
+  id uuid not null default gen_random_uuid() primary key,
+  name text not null,               -- Tên thuốc (e.g., Panadol Extra)
+  active_ingredient text,           -- Hoạt chất (e.g., Paracetamol)
+  manufacturer text,                -- Nhà sản xuất
+  unit text,                        -- Đơn vị tính (e.g., Viên, Hộp, Chai)
+  price decimal(10, 2),             -- Giá bán
+  description text,                 -- Mô tả/Chống chỉ định
+  image_url text,                   -- Ảnh thuốc
+  created_at timestamptz default now()
+);
+
+---
+create table public.inventory (
+  id uuid not null default gen_random_uuid() primary key,
+  medicine_id uuid references public.medicines(id),
+  batch_number text,                -- Số lô (để quản lý hạn dùng)
+  quantity integer default 0,       -- Số lượng tồn kho
+  expiry_date date,                 -- Hạn sử dụng
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+---
+create table public.prescription_items (
+  id uuid not null default gen_random_uuid() primary key,
+  prescription_id uuid references public.prescriptions(id) on delete cascade,
+  medicine_id uuid references public.medicines(id),
+  quantity integer not null,        -- Số lượng kê
+  instructions text,                -- Hướng dẫn sử dụng cụ thể cho thuốc này
+  created_at timestamptz default now()
+);
