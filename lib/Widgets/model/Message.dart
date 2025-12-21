@@ -1,7 +1,8 @@
 class Message {
   final String? id;
   final String senderId;
-  final String receiverId;
+  final String? receiverId; // Nullable for channel messages
+  final String? channelId;  // New field
   final String content;
   final DateTime createdAt;
   final bool isRead;
@@ -9,7 +10,8 @@ class Message {
   Message({
     this.id,
     required this.senderId,
-    required this.receiverId,
+    this.receiverId,
+    this.channelId,
     required this.content,
     required this.createdAt,
     this.isRead = false,
@@ -20,6 +22,7 @@ class Message {
       id: json['id'],
       senderId: json['sender_id'],
       receiverId: json['receiver_id'],
+      channelId: json['channel_id'],
       content: json['content'],
       createdAt: DateTime.parse(json['created_at']),
       isRead: json['is_read'] ?? false,
@@ -30,6 +33,7 @@ class Message {
     return {
       'sender_id': senderId,
       'receiver_id': receiverId,
+      'channel_id': channelId,
       'content': content,
       'is_read': isRead,
     };

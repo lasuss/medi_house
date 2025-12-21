@@ -192,7 +192,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 children: [
-                  _buildSectionHeader('Account Settings'),
+                  _buildSectionHeader('Cài đặt tài khoản'),
                   _buildSettingsItem(
                     Icons.person_outline,
                     'Chỉnh sửa hồ sơ cá nhân',
@@ -220,16 +220,20 @@ class _DoctorProfileState extends State<DoctorProfile> {
                     },
                   ),
                   const SizedBox(height: 20),
-                  _buildSectionHeader('General'),
+                  _buildSectionHeader('Thông tin chung'),
                   _buildSettingsItem(
-                    Icons.privacy_tip_outlined,
-                    'Chính sách bảo mật',
-                        () {},
+                    Icons.history_edu, // Icon for Oath (History/Education)
+                    'Những lời thề của y bác sĩ',
+                        () {
+                      _showHippocraticOathDialog(context);
+                    },
                   ),
                   _buildSettingsItem(
                     Icons.help_outline,
                     'Trợ giúp & Hỗ trợ',
-                        () {},
+                        () {
+                       context.go('/doctor/profile/help_center');
+                    },
                   ),
                   const SizedBox(height: 20),
                   _buildSettingsItem(
@@ -360,6 +364,35 @@ class _DoctorProfileState extends State<DoctorProfile> {
         ),
         trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
         onTap: onTap,
+      ),
+    );
+  }
+
+  void _showHippocraticOathDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Lời thề Hippocrates', style: TextStyle(color: Colors.blue)),
+        content: const SingleChildScrollView(
+          child: Text(
+            'Tôi xin thề trước Apollo thần chữa bệnh, trước Asclepius, Hygieia và Panacea, và trước sự chứng kiến của tất cả các nam nữ thiên thần, là tôi sẽ thực hiện lời thề và cam kết này hết năng lực và trí tuệ của mình:\n\n'
+            'Tôi sẽ coi các thầy học của mình ngang hàng với các bậc thân sinh ra tôi. Tôi sẽ chia sẻ với các vị đó của cải của tôi, và khi cần tôi sẽ đáp ứng những nhu cầu của các vị đó. Tôi sẽ coi con của thầy như anh em ruột thịt của mình, và nếu họ muốn học nghề y thì tôi sẽ dạy cho họ không lấy tiền công mà cũng không giấu nghề.\n\n'
+            'Tôi sẽ chỉ dẫn mọi chế độ có lợi cho người bệnh tùy theo khả năng và sự phán đoán của tôi, tôi sẽ tránh mọi điều xấu và bất công.\n\n'
+            'Tôi sẽ không trao thuốc độc cho bất kỳ ai, kể cả khi họ yêu cầu và cũng không gợi ý cho họ; cũng như vậy, tôi cũng sẽ không trao cho bất cứ người phụ nữ nào thuốc gây sảy thai.\n\n'
+            'Tôi sẽ giữ gìn sự vô tư và thân khiết trong cuộc sống của mình và trong nghề nghiệp của mình.\n\n'
+            'Dù vào bất cứ nhà nào, tôi cũng chỉ vì lợi ích của người bệnh, tránh mọi hành vi xấu xa, cố ý và đồi bại, nhất là tránh cám dỗ phụ nữ và thiếu niên tự do hay nô lệ.\n\n'
+            'Dù tôi có nhìn hoặc nghe thấy gì trong xã hội, trong và cả ngoài lúc hành nghề của tôi, tôi sẽ xin im lặng trước những điều không bao giờ cần để lộ ra và coi sự kín đáo trong trường hợp đó như một nghĩa vụ.\n\n'
+            'Nếu tôi làm trọn lời thề này và không có gì vi phạm tôi sẽ được hưởng một cuộc sống sung sướng và sẽ được hành nghề trong sự quý trọng mãi mãi của mọi người. Nếu tôi vi phạm lời thề này hay tôi tự phản bội, thì tôi sẽ phải chịu một số phận khổ sở ngược lại.',
+            style: TextStyle(height: 1.5),
+            textAlign: TextAlign.justify,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Đóng'),
+          ),
+        ],
       ),
     );
   }

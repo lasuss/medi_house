@@ -156,18 +156,11 @@ class _RegisterPageState extends State<RegisterPage> {
                 _buildTextField('Confirm your password', _confirmPasswordController, hint: 'Confirm your password', isPassword: true),
                 const SizedBox(height: 24),
 
-                // Role Selection
-                const Text('I am a:', style: TextStyle(color: Colors.grey)),
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    _buildRoleButton(UserRole.patient, 'Patient', FontAwesomeIcons.user),
-                    const SizedBox(width: 10),
-                    _buildRoleButton(UserRole.doctor, 'Doctor', FontAwesomeIcons.userDoctor),
-                    const SizedBox(width: 10),
-                    _buildRoleButton(UserRole.pharmacy, 'Pharmacy', FontAwesomeIcons.pills),
-                  ],
-                ),
+                
+                // Role Selection Removed - Default is Patient
+                
+                const SizedBox(height: 20),
                 const SizedBox(height: 32),
 
                 // Register Button

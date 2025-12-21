@@ -20,10 +20,13 @@ import 'package:medi_house/Widgets/doctor/DoctorScanQR.dart';
 import 'package:medi_house/Widgets/doctor/DoctorSchedule.dart';
 import 'package:medi_house/Widgets/doctor/DoctorEditProfile.dart';
 import 'package:medi_house/Widgets/doctor/DoctorScanNationalID.dart';
+import 'package:medi_house/Widgets/doctor/DoctorHelpCenter.dart';
 
 // Patient Widgets
 import 'package:medi_house/Widgets/patient/PatientAddRecord.dart';
-import 'package:medi_house/Widgets/patient/PatientAppointment.dart';
+import 'package:medi_house/Widgets/patient/PatientAddRecord.dart';
+import 'package:medi_house/Widgets/patient/PatientProfiles.dart'; // Replaces PatientAppointment
+import 'package:medi_house/Widgets/patient/PatientBooking.dart';
 import 'package:medi_house/Widgets/patient/PatientDashboard.dart';
 import 'package:medi_house/Widgets/patient/PatientMessages.dart';
 import 'package:medi_house/Widgets/patient/PatientNotification.dart';
@@ -36,11 +39,19 @@ import 'package:medi_house/Widgets/patient/PatientShowQR.dart';
 import 'package:medi_house/Widgets/patient/PatientHelpCenter.dart';
 import 'package:medi_house/Widgets/patient/TermsOfService.dart';
 import 'package:medi_house/Widgets/patient/PrivacyPolicy.dart';
+import 'package:medi_house/Widgets/patient/PatientTriageForm.dart';
 
 // Pharmacy Widgets
+import 'package:medi_house/Widgets/admin/AdminDashboard.dart';
+import 'package:medi_house/Widgets/admin/AdminUserManagement.dart';
 import 'package:medi_house/Widgets/pharmacy/PharmacyFilled.dart';
 import 'package:medi_house/Widgets/pharmacy/PharmacyInventory.dart';
 import 'package:medi_house/Widgets/pharmacy/PharmacyPending.dart';
+
+// Receptionist Widgets
+import 'package:medi_house/Widgets/receptionist/ReceptionistDashboard.dart';
+import 'package:medi_house/Widgets/receptionist/ReceptionistTriageDetail.dart';
+import 'package:medi_house/Widgets/receptionist/ReceptionistProfile.dart';
 
 class MediRouter {
   static final GoRouter router = GoRouter(
@@ -128,6 +139,14 @@ class MediRouter {
           // Admin Routes
           else if (location.startsWith('/admin/dashboard')) {
             currentIndex = 0;
+          } else if (location.startsWith('/admin/users')) {
+            currentIndex = 1;
+          }
+          // Receptionist Routes
+          else if (location.startsWith('/receptionist/dashboard')) {
+            currentIndex = 0;
+          } else if (location.startsWith('/receptionist/profile')) {
+            currentIndex = 1;
           }
 
           return NoTransitionPage(
@@ -145,7 +164,15 @@ class MediRouter {
           ),
           GoRoute(
             path: '/patient/appointments',
-            pageBuilder: (context, state) => const NoTransitionPage(child: PatientAppointment()),
+            pageBuilder: (context, state) => const NoTransitionPage(child: PatientProfiles()),
+          ),
+          GoRoute(
+            path: '/patient/booking',
+            pageBuilder: (context, state) => const MaterialPage(child: PatientBooking(), fullscreenDialog: true),
+          ),
+          GoRoute(
+            path: '/patient/triage',
+            pageBuilder: (context, state) => const MaterialPage(child: PatientTriageForm(), fullscreenDialog: true),
           ),
           GoRoute(
             path: '/patient/messages',
@@ -187,11 +214,11 @@ class MediRouter {
 
           GoRoute(
             path: '/patient/records/add',
-            pageBuilder: (context, state) => const MaterialPage(child: PatientAddRecord(), fullscreenDialog: true),
+            pageBuilder: (context, state) => const MaterialPage(child: PatientBooking(), fullscreenDialog: true), // Redirect old add record to new booking
           ),
           GoRoute(
             path: '/patient/records/:id',
-            pageBuilder: (context, state) => MaterialPage(child: PatientRecordDetail(title: 'Record ${state.pathParameters['id']}', patientID: '1111',)),
+            pageBuilder: (context, state) => MaterialPage(child: PatientRecordDetail(patientID: state.pathParameters['id']!)),
           ),
           GoRoute(
             path: '/patient/show_qr',
@@ -221,6 +248,20 @@ class MediRouter {
                     fullscreenDialog: true
                 ),
               ),
+              GoRoute(
+                path: 'help_center',
+                pageBuilder: (context, state) => const MaterialPage(child: DoctorHelpCenter()),
+                routes: [
+                  GoRoute(
+                    path: 'terms',
+                    pageBuilder: (context, state) => const MaterialPage(child: TermsOfService()),
+                  ),
+                  GoRoute(
+                    path: 'privacy',
+                    pageBuilder: (context, state) => const MaterialPage(child: PrivacyPolicy()),
+                  ),
+                ],
+              ),
             ],
           ),
           GoRoute(
@@ -229,7 +270,7 @@ class MediRouter {
           ),
           GoRoute(
             path: '/doctor/records/:id',
-            pageBuilder: (context, state) => MaterialPage(child: DoctorRecordDetail(title: 'Record ${state.pathParameters['id']}')),
+            pageBuilder: (context, state) => MaterialPage(child: DoctorRecordDetail(title: 'Record ${state.pathParameters['id']}',  recordId: state.pathParameters['id']!)),
           ),
           GoRoute(
             path: '/doctor/scan_qr',
@@ -255,6 +296,24 @@ class MediRouter {
             path: '/admin/dashboard',
             pageBuilder: (context, state) => const NoTransitionPage(child: AdminDashboard()),
           ),
+          GoRoute(
+            path: '/admin/users',
+            pageBuilder: (context, state) => const NoTransitionPage(child: AdminUserManagement()),
+          ),
+
+          // --- Receptionist Routes ---
+          GoRoute(
+            path: '/receptionist/dashboard',
+            pageBuilder: (context, state) => const NoTransitionPage(child: ReceptionistDashboard()),
+          ),
+          GoRoute(
+            path: '/receptionist/profile',
+            pageBuilder: (context, state) => const NoTransitionPage(child: ReceptionistProfile()),
+          ),
+          GoRoute(
+            path: '/receptionist/triage/:id',
+            pageBuilder: (context, state) => MaterialPage(child: ReceptionistTriageDetail(recordId: state.pathParameters['id']!)),
+          ),
         ],
       ),
 
@@ -279,6 +338,7 @@ class MediRouter {
         if (role == UserRole.doctor) return '/doctor/dashboard';
         if (role == UserRole.pharmacy) return '/pharmacy/pending';
         if (role == UserRole.admin) return '/admin/dashboard';
+        if (role == UserRole.receptionist) return '/receptionist/dashboard';
       }
       
       return null;

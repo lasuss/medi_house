@@ -39,9 +39,11 @@ class _PatientMessagesState extends State<PatientMessages> {
         .asyncMap((data) async {
           final messages = data.map((e) => Message.fromJson(e)).toList();
           
-          // Filter messages involving me
+          // Filter messages involving me AND are direct messages (not channel)
           final myMessages = messages.where((m) => 
-            m.senderId == _myId || m.receiverId == _myId
+            (m.senderId == _myId || m.receiverId == _myId) &&
+            m.channelId == null && 
+            m.receiverId != null // Ensure DM
           ).toList();
 
           // Group by other user
@@ -51,7 +53,8 @@ class _PatientMessagesState extends State<PatientMessages> {
           final Set<String> userIdsToFetch = {};
 
           for (var msg in myMessages) {
-            final otherId = msg.senderId == _myId ? msg.receiverId : msg.senderId;
+            // Safe to bang ! because of filter above
+            final otherId = (msg.senderId == _myId ? msg.receiverId : msg.senderId)!;
             
             // Track unread: if I am receiver and !isRead
             if (msg.receiverId == _myId && !msg.isRead) {
@@ -116,14 +119,6 @@ class _PatientMessagesState extends State<PatientMessages> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text(
-          'Tin nhắn',
-          style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -164,7 +159,7 @@ class _PatientMessagesState extends State<PatientMessages> {
                               : null,
                         ),
                         title: Text(
-                          conversation['name'] ?? 'Unknown',
+                          conversation['name'] ?? 'Không xác định',
                           style: TextStyle(
                             color: isUnread ? Colors.black : Colors.black87,
                             fontWeight: isUnread ? FontWeight.w800 : FontWeight.w600,

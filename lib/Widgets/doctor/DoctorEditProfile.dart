@@ -38,17 +38,17 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
 
   // Specialty options
   final List<String> _specialtyOptions = [
-    'Cardiology',
-    'Dermatology',
-    'Neurology',
-    'Pediatrics',
-    'Orthopedics',
-    'Psychiatry',
-    'General Practitioner',
-    'Surgery',
-    'Ophthalmology',
-    'ENT',
-    'Other',
+    'Tim mạch',
+    'Da liễu',
+    'Thần kinh',
+    'Nhi khoa',
+    'Chỉnh hình',
+    'Tâm thần',
+    'Bác sĩ đa khoa',
+    'Phẫu thuật',
+    'Nhãn khoa',
+    'Tai Mũi Họng',
+    'Tiêu hóa - Gan mật',
   ];
 
   @override

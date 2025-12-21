@@ -3,6 +3,8 @@ import  'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:medi_house/Widgets/model/PatientChatScreen.dart'; // Reuse for now
 import 'package:medi_house/Widgets/model/Message.dart';
+import 'package:medi_house/Widgets/doctor/ChannelChatScreen.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class DoctorMessages extends StatefulWidget {
   const DoctorMessages({Key? key, this.title}) : super(key: key);
@@ -33,7 +35,11 @@ class _DoctorMessagesState extends State<DoctorMessages> {
         .order('created_at', ascending: false)
         .asyncMap((data) async {
           final messages = data.map((e) => Message.fromJson(e)).toList();
-          final myMessages = messages.where((m) => m.senderId == _myId || m.receiverId == _myId).toList();
+          final myMessages = messages.where((m) => 
+            (m.senderId == _myId || m.receiverId == _myId) && 
+            m.channelId == null && 
+            m.receiverId != null // Ensure it's a DM
+          ).toList();
 
           // Group by other user and count unread
           final Map<String, Message> lastMessages = {};
@@ -41,7 +47,8 @@ class _DoctorMessagesState extends State<DoctorMessages> {
           final Set<String> userIdsToFetch = {};
 
           for (var msg in myMessages) {
-            final otherId = msg.senderId == _myId ? msg.receiverId : msg.senderId;
+            // Safe because we filtered out null receiverId if sender is me
+            final otherId = (msg.senderId == _myId ? msg.receiverId : msg.senderId)!;
             
             // Track unread
             if (msg.receiverId == _myId && !msg.isRead) {
@@ -95,61 +102,140 @@ class _DoctorMessagesState extends State<DoctorMessages> {
     return "${time.day}/${time.month} ${time.hour}:${time.minute.toString().padLeft(2, '0')}";
   }
 
+  Future<List<Map<String, dynamic>>> _getFilteredChannels() async {
+    try {
+      // 1. Get doctor specialty
+      final docInfo = await _supabase
+          .from('doctor_info')
+          .select('specialty')
+          .eq('user_id', _myId)
+          .maybeSingle(); // Use maybeSingle in case doctor_info missing
+      
+      final specialty = docInfo?['specialty'] as String?;
+      debugPrint('Doctor Specialty: $specialty');
+
+      debugPrint('Doctor Specialty: $specialty');
+
+      // 2. Fetch ALL channels and filter client-side for robust string matching
+      // This avoids issues with special characters/spaces in Supabase filters
+      final response = await _supabase
+          .from('channels')
+          .select()
+          .order('name', ascending: true);
+      
+      final List<Map<String, dynamic>> allChannels = List<Map<String, dynamic>>.from(response);
+
+      final filteredChannels = allChannels.where((channel) {
+        final name = channel['name'] as String;
+        // Always show General
+        if (name == 'General') return true;
+        
+        if (specialty != null) {
+          final sName = name.toLowerCase().trim();
+          final sSpecialty = specialty.toLowerCase().trim();
+          
+          // Case-insensitive match
+          if (sName == sSpecialty) return true;
+          
+          // Partial match (e.g. Doc has 'Khoa Tim mạch', Channel is 'Tim mạch')
+          if (sSpecialty.contains(sName) || sName.contains(sSpecialty)) return true;
+        }
+        
+        return false;
+      }).toList();
+      
+      debugPrint('Filtered Channels: $filteredChannels');
+      return filteredChannels;
+          
+    } catch (e) {
+      debugPrint('Error fetching channels: $e');
+      return [];
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: const Text(
-          'Messages',
-          style: TextStyle(
-            color: Color(0xFF2D3748),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Color(0xFF2D3748)),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.edit_note, color: Color(0xFF2D3748)),
-            onPressed: () {},
-          ),
-        ],
-      ),
       body: Column(
         children: [
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildFilterChip('All', _filter == 'All'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Unread', _filter == 'Unread'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Patients', _filter == 'Patients'),
-                ],
-              ),
+          // Channels Section
+          SizedBox(
+            height: 100,
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _getFilteredChannels(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                final channels = snapshot.data!;
+                if (channels.isEmpty) return const SizedBox.shrink();
+                
+                return ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  itemCount: channels.length,
+                  itemBuilder: (context, index) {
+                    final channel = channels[index];
+                    // Translate 'General' to 'Đa khoa' for display
+                    String displayName = channel['name'];
+                    if (displayName == 'General') displayName = 'Đa khoa';
+
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: InkWell(
+                        onTap: () {
+                           Navigator.push(
+                             context,
+                             MaterialPageRoute(
+                               builder: (context) => ChannelChatScreen(
+                                 channelId: channel['id'], 
+                                 channelName: displayName 
+                               ),
+                             ),
+                           );
+                        },
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 50,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: Colors.indigo.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Center(
+                                child: FaIcon(FontAwesomeIcons.users, color: Colors.indigo, size: 20),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              displayName, 
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
             ),
           ),
+          const Divider(height: 1),
+          // Conversation List
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
               stream: _conversationsStream,
               builder: (context, snapshot) {
-                 if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
+                 if (snapshot.hasError) return Center(child: Text('Lỗi: ${snapshot.error}'));
                  if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
                  
-                 final allConversations = snapshot.data!;
-                 final conversations = _filterConversations(allConversations);
+                 final conversations = snapshot.data!; // No filter
 
-                 if (conversations.isEmpty) return const Center(child: Text('No messages'));
+                 if (conversations.isEmpty) return const Center(child: Text('Chưa có tin nhắn'));
 
                  return ListView.separated(
                   itemCount: conversations.length,
@@ -261,31 +347,6 @@ class _DoctorMessagesState extends State<DoctorMessages> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  List<Map<String, dynamic>> _filterConversations(List<Map<String, dynamic>> all) {
-    if (_filter == 'Unread') return all.where((c) => (c['unreadCount'] as int) > 0).toList();
-    if (_filter == 'Patients') return all.where((c) => c['role'] == 'patient').toList();
-    return all;
-  }
-
-  Widget _buildFilterChip(String label, bool isSelected) {
-    return GestureDetector(
-      onTap: () => setState(() => _filter = label),
-      child: Chip(
-        label: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : const Color(0xFF2D3748),
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-        backgroundColor:
-            isSelected ? const Color(0xFF3182CE) : const Color(0xFFEDF2F7),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        side: BorderSide.none,
       ),
     );
   }

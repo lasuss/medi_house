@@ -23,13 +23,11 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
 
   /// Xác định vai trò của người dùng dựa trên đường dẫn URL hiện tại.
-  /// Đây là một giải pháp tạm thời để xây dựng giao diện.
-  /// Trong thực tế, bạn nên lấy vai trò từ state quản lý đăng nhập (ví dụ: Provider, Bloc).
   UserRole _getRoleFromLocation(String location) {
     if (location.startsWith('/doctor')) return UserRole.doctor;
     if (location.startsWith('/pharmacy')) return UserRole.pharmacy;
     if (location.startsWith('/admin')) return UserRole.admin;
-    // Mặc định là patient cho các route còn lại trong shell
+    if (location.startsWith('/receptionist')) return UserRole.receptionist;
     return UserRole.patient;
   }
 
@@ -100,7 +98,6 @@ class _AppShellState extends State<AppShell> {
                       } else if (location.startsWith('/patient')) {
                          context.push('/patient/notifications');
                       } else {
-                         // Default fall back or toast
                       }
                     },
                   ),
@@ -135,7 +132,6 @@ class _AppShellState extends State<AppShell> {
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: () {
-              // Điều hướng về trang đăng nhập khi đăng xuất.
               UserManager().clearUser();
               context.go('/login');
             },

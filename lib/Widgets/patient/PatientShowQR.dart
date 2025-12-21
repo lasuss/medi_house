@@ -45,7 +45,7 @@ class _PatientShowQRState extends State<PatientShowQR> {
           onPressed: () => GoRouter.of(context).pop(),
         ),
         title: const Text(
-          'Your Medical ID',
+          'Mã Y Tế Của Bạn',
           style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w500),
         ),
         centerTitle: true,
@@ -73,7 +73,7 @@ class _PatientShowQRState extends State<PatientShowQR> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Record ID: $_recordId',
+                    'Mã Hồ Sơ: $_recordId',
                     style: const TextStyle(
                       color: Colors.grey,
                       fontSize: 16,
@@ -108,7 +108,7 @@ class _PatientShowQRState extends State<PatientShowQR> {
             ),
             const SizedBox(height: 30),
             const Text(
-              'Present this code to your doctor or pharmacist to access your records.',
+              'Vui lòng xuất trình mã này cho bác sĩ hoặc dược sĩ để truy cập hồ sơ của bạn.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white70,
@@ -117,7 +117,7 @@ class _PatientShowQRState extends State<PatientShowQR> {
             ),
             const SizedBox(height: 12),
             const Text(
-              'This code contains a secure, temporary link to your record.',
+              'Mã này chứa liên kết bảo mật tạm thời đến hồ sơ của bạn.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.grey,
@@ -129,7 +129,7 @@ class _PatientShowQRState extends State<PatientShowQR> {
               onPressed: _refreshCode,
               icon: const Icon(Icons.refresh, color: Colors.white),
               label: const Text(
-                'Refresh Code',
+                'Làm mới Mã',
                 style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(

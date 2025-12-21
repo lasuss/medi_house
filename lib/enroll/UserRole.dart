@@ -2,7 +2,8 @@ enum UserRole {
   patient,
   doctor,
   pharmacy,
-  admin;
+  admin,
+  receptionist;
 
   /// Chuyển đổi một chuỗi String (lấy từ database) thành một giá trị enum UserRole.
   ///
@@ -18,6 +19,8 @@ enum UserRole {
         return UserRole.pharmacy;
       case 'admin':
         return UserRole.admin;
+      case 'receptionist':
+        return UserRole.receptionist;
       default:
         return UserRole.patient;
     }

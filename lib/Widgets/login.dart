@@ -49,55 +49,62 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (res.user != null) {
-        // Fetch user role from public.users table
-        final userData = await Supabase.instance.client
-            .from('users')
-            .select('role')
-            .eq('id', res.user!.id)
-            .single();
+        try {
+          final userData = await Supabase.instance.client
+              .from('users')
+              .select('role')
+              .eq('id', res.user!.id)
+              .maybeSingle();
 
-        final role = userData['role'] as String?;
-
-        if (mounted && role != null) {
-          // Save user role to UserManager and SharedPreferences
-          await UserManager.instance.saveUserRole(role);
-          await UserManager.instance.loadUser(); // Refresh state
-
-          if ((role == 'patient') && (_selectedRole == UserRole.patient))  {
-            context.go('/patient/dashboard');
-          } else if (role == 'doctor' && _selectedRole == UserRole.doctor) {
-            context.go('/doctor/dashboard');
-          } else if (role == 'pharmacy' && _selectedRole == UserRole.pharmacy) {
-            context.go('/pharmacy/pending');
-          } else if (role == 'admin') {
-            context.go('/admin/dashboard');
-          } else {
-             // Handle role mismatch
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Vai trò bạn chọn không đúng với tài khoản.'),
-                backgroundColor: Colors.orange,
-              ),
-            );
+          if (userData == null) {
+             throw 'Không tìm thấy thông tin người dùng.';
           }
+
+          final role = userData['role'] as String?;
+          
+          if (mounted && role != null) {
+            await UserManager.instance.saveUserRole(role);
+            await UserManager.instance.loadUser();
+
+            if ((role == 'patient') && (_selectedRole == UserRole.patient))  {
+              context.go('/patient/dashboard');
+            } else if (role == 'doctor' && _selectedRole == UserRole.doctor) {
+              context.go('/doctor/dashboard');
+            } else if (role == 'pharmacy' && _selectedRole == UserRole.pharmacy) {
+              context.go('/pharmacy/pending');
+            } else if (role == 'admin') {
+              context.go('/admin/dashboard');
+            } else if (role == 'receptionist') {
+              context.go('/receptionist/dashboard');
+            } else {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Vai trò không khớp: Tài khoản là "$role" nhưng bạn đang đăng nhập với tư cách "${_selectedRole.name}"'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+            }
+          } else {
+             throw 'Tài khoản chưa được phân quyền. Vui lòng liên hệ Admin.';
+          }
+        } catch (dbError) {
+           throw 'Lỗi hệ thống khi lấy thông tin người dùng: $dbError';
         }
+      } else {
+        throw 'Đăng nhập thất bại. Vui lòng kiểm tra lại.';
       }
     } on AuthException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Lỗi đăng nhập: ${e.message}'), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi đăng nhập: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Đã xảy ra lỗi: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -221,13 +228,14 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 24),
                 const Text('I am a:', style: TextStyle(color: Colors.grey)),
                 const SizedBox(height: 12),
-                Row(
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
                   children: [
-                    _buildRoleButton(UserRole.patient, 'Patient', FontAwesomeIcons.user),
-                    const SizedBox(width: 10),
-                    _buildRoleButton(UserRole.doctor, 'Doctor', FontAwesomeIcons.userDoctor),
-                    const SizedBox(width: 10),
-                    _buildRoleButton(UserRole.pharmacy, 'Pharmacy', FontAwesomeIcons.pills),
+                    SizedBox(width: 100, child: _buildRoleButton(UserRole.patient, 'Patient', FontAwesomeIcons.user)),
+                    SizedBox(width: 100, child: _buildRoleButton(UserRole.doctor, 'Doctor', FontAwesomeIcons.userDoctor)),
+                    SizedBox(width: 110, child: _buildRoleButton(UserRole.pharmacy, 'Pharmacy', FontAwesomeIcons.pills)),
+                    SizedBox(width: 110, child: _buildRoleButton(UserRole.receptionist, 'Reception', FontAwesomeIcons.conciergeBell)),
                   ],
                 ),
                 const SizedBox(height: 32),
@@ -273,8 +281,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _buildRoleButton(UserRole role, String text, IconData icon) {
     final isSelected = _selectedRole == role;
-    return Expanded(
-      child: OutlinedButton.icon(
+    return OutlinedButton.icon(
         onPressed: () {
           setState(() {
             _selectedRole = role;
@@ -290,8 +297,7 @@ class _LoginPageState extends State<LoginPage> {
             borderRadius: BorderRadius.circular(8),
           ),
         ),
-      ),
-    );
+      );
   }
 }
 

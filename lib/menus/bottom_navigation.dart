@@ -23,7 +23,7 @@ class NavigationItemConfig {
 final Map<UserRole, List<NavigationItemConfig>> navigationConfigs = {
   UserRole.patient: [
     const NavigationItemConfig(icon: FontAwesomeIcons.houseMedical, label: 'Trang chủ', route: '/patient/dashboard'),
-    const NavigationItemConfig(icon: FontAwesomeIcons.calendarCheck, label: 'Lịch hẹn', route: '/patient/appointments'),
+    const NavigationItemConfig(icon: FontAwesomeIcons.idCard, label: 'Hồ sơ', route: '/patient/appointments'),
     const NavigationItemConfig(icon: FontAwesomeIcons.commentDots, label: 'Tin nhắn', route: '/patient/messages'),
     const NavigationItemConfig(icon: FontAwesomeIcons.solidBell, label: 'Thông báo', route: '/patient/notifications'),
     const NavigationItemConfig(icon: FontAwesomeIcons.solidUser, label: 'Tài khoản', route: '/patient/profile'),
@@ -42,6 +42,11 @@ final Map<UserRole, List<NavigationItemConfig>> navigationConfigs = {
   ],
   UserRole.admin: [
     const NavigationItemConfig(icon: FontAwesomeIcons.chartPie, label: 'Dashboard', route: '/admin/dashboard'),
+    const NavigationItemConfig(icon: FontAwesomeIcons.usersGear, label: 'Người dùng', route: '/admin/users'),
+  ],
+  UserRole.receptionist: [
+    const NavigationItemConfig(icon: FontAwesomeIcons.clipboardList, label: 'Phân loại', route: '/receptionist/dashboard'),
+    const NavigationItemConfig(icon: FontAwesomeIcons.userGear, label: 'Tài khoản', route: '/receptionist/profile'),
   ],
 };
 

@@ -296,13 +296,24 @@ class _PharmacyPendingState extends State<PharmacyPending> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(
-                          pi.medicine?.name ?? 'Unknown Drug',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF2D3748),
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              pi.medicine?.name ?? 'Unknown Drug',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF2D3748),
+                              ),
+                            ),
+                            if (pi.medicine?.description != null)
+                              Text(
+                                pi.medicine!.description!,
+                                style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                                maxLines: 1, overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
                         ),
                       ),
                       Container(

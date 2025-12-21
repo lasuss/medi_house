@@ -37,10 +37,10 @@ class _PatientProfileState extends State<PatientProfile> {
           .single();
 
       setState(() {
-        _userName = data['name'] ?? 'N/A';
+        _userName = data['name'] ?? 'Chưa cập nhật';
         _avatarUrl = data['avatar_url'];
         // Lấy email từ đối tượng người dùng đã xác thực để đảm bảo chính xác
-        _userEmail = _supabase.auth.currentUser!.email ?? 'N/A';
+        _userEmail = _supabase.auth.currentUser!.email ?? 'Chưa cập nhật';
       });
     } catch (e) {
       debugPrint('Lỗi khi tải hồ sơ: $e');

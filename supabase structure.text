@@ -1,94 +1,217 @@
 users
+Cột:
+id — uuid; default: gen_random_uuid(); (primary key)
+name — text; nullable
+email — text; nullable; unique
+phone — text; nullable
+role — text; nullable; check: role = ANY (ARRAY['patient','doctor','pharmacy','admin'])
+avatar_url — text; nullable
+created_at — timestamp without time zone; default: now(); nullable
+address — text; nullable
+national_id — text; nullable
+dob — date; nullable
+gender — text; nullable
+Primary key: id
+Foreign keys referencing users.id (from other tables):
+public.prescriptions.patient_id
+public.patient_profiles.user_id
+public.user_fcm_tokens.user_id
+public.notifications.user_id
+public.doctor_info.user_id
+public.messages.receiver_id
+public.messages.sender_id
+public.appointments.doctor_id
+public.appointments.patient_id
+public.prescriptions.doctor_id
+public.records.doctor_id
+public.records.patient_id
 
-id — uuid, NOT NULL (primary key), default: gen_random_uuid()
-name — text, nullable
-email — text, nullable, UNIQUE
-phone — text, nullable
-role — text, nullable, check constraint: must be one of ('patient','doctor','pharmacy','admin')
-avatar_url — text, nullable
-created_at — timestamp, nullable, default: now()
-address — text, nullable
-national_id — text, nullable
-dob — date, nullable
-gender — text, nullable
-foreign keys referencing users.id: appointments.doctor_id, prescriptions.patient_id, appointments.patient_id, messages.receiver_id, messages.sender_id, prescriptions.doctor_id, records.patient_id, records.doctor_id
-----
 
 records
+Cột:
+id — uuid; default: gen_random_uuid(); (primary key)
+patient_id — uuid; nullable; FK → public.users.id
+doctor_id — uuid; nullable; FK → public.users.id
+symptoms — text; nullable
+diagnosis — text; nullable
+notes — text; nullable
+created_at — timestamp without time zone; default: now(); nullable
+updated_at — timestamp without time zone; default: now(); nullable
+status — text; default: 'Pending'; nullable
+Primary key: id
+Foreign keys:
+prescriptions.record_id → public.records.id
+appointments.record_id → public.records.id
+records.doctor_id → public.users.id
+records.patient_id → public.users.id
 
-id — uuid, NOT NULL (primary key), default: gen_random_uuid()
-patient_id — uuid, nullable, FK -> users.id
-doctor_id — uuid, nullable, FK -> users.id
-symptoms — text, nullable
-diagnosis — text, nullable
-notes — text, nullable
-created_at — timestamp, nullable, default: now()
-updated_at — timestamp, nullable, default: now()
-foreign keys: prescriptions.record_id -> records.id
 
-
-----
 prescriptions
+Cột:
+id — uuid; default: gen_random_uuid(); (primary key)
+record_id — uuid; nullable; FK → public.records.id
+doctor_id — uuid; nullable; FK → public.users.id
+patient_id — uuid; nullable; FK → public.users.id
+created_at — timestamp without time zone; default: now(); nullable
+status — text; default: 'Pending'; nullable
+Primary key: id
+Foreign keys:
+record_id → public.records.id
+doctor_id → public.users.id
+patient_id → public.users.id
+referenced by prescription_items.prescription_id
 
-id — uuid, NOT NULL (primary key), default: gen_random_uuid()
-record_id — uuid, nullable, FK -> records.id
-doctor_id — uuid, nullable, FK -> users.id
-patient_id — uuid, nullable, FK -> users.id
 
-instructions — text, nullable
-status — text, nullable, default: 'Pending'
-created_at — timestamp, nullable, default: now()
-
----
 appointments
+Cột:
+id — uuid; default: gen_random_uuid(); (primary key)
+patient_id — uuid; nullable; FK → public.users.id
+doctor_id — uuid; nullable; FK → public.users.id
+date — timestamp without time zone; nullable
+status — text; nullable
+created_at — timestamp without time zone; default: now(); nullable
+record_id — uuid; nullable; FK → public.records.id
+time_slot — text; nullable
+type — text; default: 'General'; nullable
+notes — text; nullable
+Primary key: id
+Foreign keys:
+record_id → public.records.id
+doctor_id → public.users.id
+patient_id → public.users.id
 
-id — uuid, NOT NULL (primary key), default: gen_random_uuid()
-patient_id — uuid, nullable, FK -> users.id
-doctor_id — uuid, nullable, FK -> users.id
-date — timestamp, nullable
-status — text, nullable
-created_at — timestamp, nullable, default: now()
 
-
----
 messages
+Cột:
+id — uuid; default: gen_random_uuid(); (primary key)
+sender_id — uuid; (updatable) FK → public.users.id
+receiver_id — uuid; (updatable) FK → public.users.id
+content — text; (updatable)
+created_at — timestamp without time zone; default: now(); nullable
+is_read — boolean; default: false; nullable
+Primary key: id
+Foreign keys:
+sender_id → public.users.id
+receiver_id → public.users.id
 
-id — uuid, NOT NULL (primary key), default: gen_random_uuid()
-sender_id — uuid, (nullable not listed explicitly), FK -> users.id
-receiver_id — uuid, (nullable not listed explicitly), FK -> users.id
-content — text
-created_at — timestamp, nullable, default: now()
 
----
-create table public.medicines (
-  id uuid not null default gen_random_uuid() primary key,
-  name text not null,               -- Tên thuốc (e.g., Panadol Extra)
-  active_ingredient text,           -- Hoạt chất (e.g., Paracetamol)
-  manufacturer text,                -- Nhà sản xuất
-  unit text,                        -- Đơn vị tính (e.g., Viên, Hộp, Chai)
-  price decimal(10, 2),             -- Giá bán
-  description text,                 -- Mô tả/Chống chỉ định
-  image_url text,                   -- Ảnh thuốc
-  created_at timestamptz default now()
-);
+medicines
+Cột:
+id — uuid; default: gen_random_uuid(); (primary key)
+name — text; updatable
+active_ingredient — text; nullable
+manufacturer — text; nullable
+unit — text; nullable
+price — numeric; nullable
+description — text; nullable
+image_url — text; nullable
+created_at — timestamp with time zone; default: now(); nullable
+Primary key: id
+Foreign keys referencing medicines.id:
+public.inventory.medicine_id
+public.prescription_items.medicine_id
 
----
-create table public.inventory (
-  id uuid not null default gen_random_uuid() primary key,
-  medicine_id uuid references public.medicines(id),
-  batch_number text,                -- Số lô (để quản lý hạn dùng)
-  quantity integer default 0,       -- Số lượng tồn kho
-  expiry_date date,                 -- Hạn sử dụng
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
 
----
-create table public.prescription_items (
-  id uuid not null default gen_random_uuid() primary key,
-  prescription_id uuid references public.prescriptions(id) on delete cascade,
-  medicine_id uuid references public.medicines(id),
-  quantity integer not null,        -- Số lượng kê
-  instructions text,                -- Hướng dẫn sử dụng cụ thể cho thuốc này
-  created_at timestamptz default now()
-);
+inventory
+Cột:
+id — uuid; default: gen_random_uuid(); (primary key)
+medicine_id — uuid; nullable; FK → public.medicines.id
+batch_number — text; nullable
+quantity — integer; default: 0; nullable
+expiry_date — date; nullable
+created_at — timestamp with time zone; default: now(); nullable
+updated_at — timestamp with time zone; default: now(); nullable
+Primary key: id
+Foreign keys:
+medicine_id → public.medicines.id
+
+
+prescription_items
+Cột:
+id — uuid; default: gen_random_uuid(); (primary key)
+prescription_id — uuid; nullable; FK → public.prescriptions.id
+medicine_id — uuid; nullable; FK → public.medicines.id
+quantity — integer; updatable
+instructions — text; nullable
+created_at — timestamp with time zone; default: now(); nullable
+Primary key: id
+Foreign keys:
+prescription_id → public.prescriptions.id
+medicine_id → public.medicines.id
+
+
+doctor_info
+Cột:
+id — uuid; default: gen_random_uuid(); (primary key)
+user_id — uuid; updatable; unique; FK → public.users.id
+specialty — text; nullable
+license_number — text; nullable
+experience_years — integer; nullable
+education — text; nullable
+bio — text; nullable
+rating — numeric; default: 5.0; nullable
+reviews_count — integer; default: 0; nullable
+Primary key: id
+Foreign keys:
+user_id → public.users.id
+
+
+notifications
+Cột:
+id — uuid; default: gen_random_uuid(); (primary key)
+user_id — uuid; updatable; FK → public.users.id
+title — text; updatable
+body — text; updatable
+type — text; nullable; check: type = ANY (ARRAY['info','appointment','prescription'])
+is_read — boolean; default: false; nullable
+data — jsonb; default: '{}'::jsonb; nullable
+created_at — timestamp with time zone; default: now(); nullable
+Primary key: id
+Foreign keys:
+user_id → public.users.id
+
+
+user_fcm_tokens
+Cột:
+id — uuid; default: gen_random_uuid(); (primary key)
+user_id — uuid; updatable; FK → public.users.id
+token — text; updatable
+device_type — text; nullable
+updated_at — timestamp with time zone; default: now(); nullable
+Primary key: id
+Foreign keys:
+user_id → public.users.id
+
+
+patient_profiles
+Cột:
+id — uuid; default: gen_random_uuid(); (primary key)
+user_id — uuid; updatable; FK → public.users.id
+full_name — text; updatable
+dob — date; nullable
+gender — text; nullable
+phone — text; nullable
+created_at — timestamp with time zone; default: now(); nullable
+national_id — text; nullable
+health_insurance_code — text; nullable
+job — text; nullable
+email — text; nullable
+country — text; default: 'Việt Nam'; nullable
+ethnicity — text; nullable
+address_province — text; nullable
+address_district — text; nullable
+address_ward — text; nullable
+address_street — text; nullable
+Primary key: id
+Foreign keys:
+user_id → public.users.id
+
+
+medical_services
+Cột:
+id — uuid; default: gen_random_uuid(); (primary key)
+name — text; updatable
+price — numeric; default: 0; nullable
+category — text; nullable
+Primary key: id
+RLS: disabled for this table (rls_enabled: false)
