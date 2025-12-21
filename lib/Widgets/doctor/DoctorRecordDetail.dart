@@ -1,32 +1,102 @@
-
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:medi_house/Widgets/doctor/DoctorRecordDetailEdit.dart';
+
 
 class DoctorRecordDetail extends StatefulWidget {
-  const DoctorRecordDetail({Key? key, this.title}) : super(key: key);
+  const DoctorRecordDetail({
+    Key? key,
+    this.title,
+    required this.recordId,
+  }) : super(key: key);
+
   final String? title;
+  final String recordId;
+
   @override
   State<DoctorRecordDetail> createState() => _DoctorRecordDetailState();
 }
 
 class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
-  // Mock data for the record
-  final Map<String, dynamic> _record = {
-    'patientName': 'Nguyen Van A',
-    'patientId': 'PID-12345',
-    'date': 'Oct 24, 2023',
-    'diagnosis': 'Acute Bronchitis',
-    'symptoms': 'Cough, mild fever, sore throat',
-    'prescription': [
-      {'medicine': 'Amoxicillin 500mg', 'dosage': '1 tablet every 8 hours', 'duration': '5 days'},
-      {'medicine': 'Paracetamol 500mg', 'dosage': '1 tablet every 6 hours if fever > 38.5', 'duration': 'As needed'},
-      {'medicine': 'Siro Prospan', 'dosage': '5ml every morning', 'duration': '7 days'},
-    ],
-    'notes': 'Patient needs to rest and drink plenty of water. Follow up in 7 days if symptoms persist.',
-  };
+  final supabase = Supabase.instance.client;
+
+  bool isLoading = true;
+
+  Map<String, dynamic>? record;
+  Map<String, dynamic>? patient;
+  List<Map<String, dynamic>> prescriptionItems = [];
+  String? doctorNote;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecordDetail();
+  }
+
+  Future<void> _loadRecordDetail() async {
+    try {
+      // ===== RECORD + PATIENT =====
+      final recordRes = await supabase
+          .from('records')
+          .select('''
+            id,
+            diagnosis,
+            symptoms,
+            created_at,
+            patient:patient_id (
+              id,
+              name
+            )
+          ''')
+          .eq('id', widget.recordId)
+          .single();
+
+      // ===== PRESCRIPTION + ITEMS =====
+      final prescriptionRes = await supabase
+          .from('prescriptions')
+          .select('''
+            instructions,
+            prescription_items (
+              quantity,
+              instructions,
+              medicine:medicine_id (
+                name,
+                unit
+              )
+            )
+          ''')
+          .eq('record_id', widget.recordId)
+          .maybeSingle();
+
+      setState(() {
+        record = recordRes;
+        patient = recordRes['patient'];
+        doctorNote = prescriptionRes?['instructions'];
+        prescriptionItems = List<Map<String, dynamic>>.from(
+          prescriptionRes?['prescription_items'] ?? [],
+        );
+        isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Load record detail error: $e');
+      setState(() => isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final String patientName =
+    patient?['name'] != null && patient!['name'].toString().isNotEmpty
+        ? patient!['name'].toString()
+        : '-';
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
@@ -40,25 +110,13 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF2D3748)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.print_outlined),
-            onPressed: () {},
-            tooltip: 'Print Record',
-          ),
-          IconButton(
-            icon: const Icon(Icons.share_outlined),
-            onPressed: () {},
-             tooltip: 'Share Record',
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Patient Info Card
+            // ===== Patient Info =====
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -83,7 +141,7 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
                     ),
                     child: Center(
                       child: Text(
-                        _record['patientName'].substring(0, 1),
+                        patientName[0],
                         style: TextStyle(
                           color: Colors.blue[800],
                           fontWeight: FontWeight.bold,
@@ -98,7 +156,7 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _record['patientName'],
+                          patientName,
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -107,19 +165,13 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'ID: ${_record['patientId']}',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
+                          'ID: ${patient?['id'] ?? '-'}',
+                          style: TextStyle(color: Colors.grey[600]),
                         ),
                         const SizedBox(height: 4),
-                         Text(
-                          'Date: ${_record['date']}',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
+                        Text(
+                          'Date: ${record?['created_at']?.toString().split('T').first ?? '-'}',
+                          style: TextStyle(color: Colors.grey[600]),
                         ),
                       ],
                     ),
@@ -127,9 +179,10 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
                 ],
               ),
             ),
+
             const SizedBox(height: 20),
 
-            // Diagnosis Section
+            // ===== Diagnosis =====
             const Text(
               'Diagnosis',
               style: TextStyle(
@@ -140,18 +193,17 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
             ),
             const SizedBox(height: 10),
             Container(
-              width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                 border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                border: Border.all(color: Colors.blue.withOpacity(0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _record['diagnosis'],
+                    record?['diagnosis'] ?? '-',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -160,18 +212,15 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Symptoms: ${_record['symptoms']}',
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.grey[700],
-                    ),
+                    'Symptoms: ${record?['symptoms'] ?? '-'}',
+                    style: TextStyle(color: Colors.grey[700]),
                   ),
                 ],
               ),
             ),
-             const SizedBox(height: 20),
 
-            // Prescription Section
+            const SizedBox(height: 20),
+            // ===== Prescription =====
             const Text(
               'Prescription',
               style: TextStyle(
@@ -180,41 +229,77 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
                 color: Color(0xFF2D3748),
               ),
             ),
-             const SizedBox(height: 10),
-             Container(
-               decoration: BoxDecoration(
-                 color: Colors.white,
-                 borderRadius: BorderRadius.circular(12),
-                 boxShadow: [
-                   BoxShadow(
-                     color: Colors.grey.withOpacity(0.05),
-                     spreadRadius: 1,
-                     blurRadius: 5,
-                   ),
-                 ],
-               ),
-               child: ListView.separated(
-                 shrinkWrap: true,
-                 physics: const NeverScrollableScrollPhysics(),
-                 itemCount: _record['prescription']!.length,
-                 separatorBuilder: (context, index) => const Divider(height: 1),
-                 itemBuilder: (context, index) {
-                   final item = _record['prescription'][index];
-                   return ListTile(
-                     leading: const FaIcon(FontAwesomeIcons.pills, color: Colors.blue, size: 20),
-                     title: Text(
-                       item['medicine'],
-                       style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF2D3748)),
-                     ),
-                     subtitle: Text('${item['dosage']} • ${item['duration']}'),
-                   );
-                 },
-               ),
-             ),
-             const SizedBox(height: 20),
+            const SizedBox(height: 10),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: prescriptionItems.isEmpty
+                  ? const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text('No prescription'),
+              )
+                  : ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: prescriptionItems.length,
+                separatorBuilder: (_, __) =>
+                const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final item = prescriptionItems[index];
 
-            // Notes Section
-             const Text(
+                  return ListTile(
+                    leading: const FaIcon(
+                      FontAwesomeIcons.pills,
+                      color: Colors.blue,
+                      size: 20,
+                    ),
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ===== Dòng 1 =====
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                item['medicine']['name'],
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              '${item['quantity']} ${item['medicine']['unit']}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF2D3748),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+
+                        // ===== Dòng 2 =====
+                        Text(
+                          item['instructions'] ?? 'No instruction',
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ===== Doctor Notes =====
+            const Text(
               'Doctor Notes',
               style: TextStyle(
                 fontSize: 18,
@@ -224,15 +309,14 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
             ),
             const SizedBox(height: 10),
             Container(
-              width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.amber[50], // Light yellow for notes
+                color: Colors.amber[50],
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.amber[200]!),
               ),
               child: Text(
-                _record['notes'],
+                doctorNote ?? 'No instruction',
                 style: const TextStyle(
                   fontSize: 15,
                   color: Color(0xFF744210),
@@ -240,15 +324,27 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
                 ),
               ),
             ),
+
             const SizedBox(height: 30),
-            
-            // Action Button
+
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  // Edit record logic
+                onPressed: () async {
+                  // Push sang trang edit
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DoctorRecordDetailEdit(recordId: widget.recordId),
+                    ),
+                  );
+                  if (result == true) {
+                    setState(() {
+                      isLoading = true;
+                    });
+                    await _loadRecordDetail();
+                  }
                 },
                 icon: const Icon(Icons.edit),
                 label: const Text('Edit Record'),
@@ -258,10 +354,10 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  elevation: 0,
                 ),
               ),
             ),
+
           ],
         ),
       ),
