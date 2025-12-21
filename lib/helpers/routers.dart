@@ -229,7 +229,7 @@ class MediRouter {
           ),
           GoRoute(
             path: '/doctor/records/:id',
-            pageBuilder: (context, state) => MaterialPage(child: DoctorRecordDetail(title: 'Record ${state.pathParameters['id']}')),
+            pageBuilder: (context, state) => MaterialPage(child: DoctorRecordDetail(title: 'Record ${state.pathParameters['id']}',  recordId: state.pathParameters['id']!)),
           ),
           GoRoute(
             path: '/doctor/scan_qr',
