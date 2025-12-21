@@ -3,6 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:medi_house/enroll/UserRole.dart';
 import 'package:medi_house/menus/bottom_navigation.dart';
 import 'package:medi_house/helpers/UserManager.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+
 class AppShell extends StatefulWidget {
   final int currentIndex;
   final Widget child;
@@ -72,6 +75,63 @@ class _AppShellState extends State<AppShell> {
         ),
         centerTitle: true,
         actions: [
+          StreamBuilder<List<Map<String, dynamic>>>(
+            stream: Supabase.instance.client
+                .from('notifications')
+                .stream(primaryKey: ['id'])
+                .eq('is_read', false)
+                .order('created_at', ascending: false)
+                .map((data) => data.map((json) => json).toList()),
+            builder: (context, snapshot) {
+              int unreadCount = 0;
+              if (snapshot.hasData) {
+                unreadCount = snapshot.data!.length;
+              }
+              
+              return Stack(
+                children: [
+                   IconButton(
+                    icon: const Icon(Icons.notifications, color: Colors.white),
+                    onPressed: () {
+                      final String location = GoRouterState.of(context).uri.toString();
+           
+                      if (location.startsWith('/doctor')) {
+                         context.push('/doctor/notifications');
+                      } else if (location.startsWith('/patient')) {
+                         context.push('/patient/notifications');
+                      } else {
+                         // Default fall back or toast
+                      }
+                    },
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 14,
+                          minHeight: 14,
+                        ),
+                        child: Text(
+                          '$unreadCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    )
+                ],
+              );
+            }
+          ),
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: () {
