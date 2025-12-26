@@ -48,9 +48,10 @@
               patient:patient_id (
                 id,
                 name
-              )
-              appointment:appointments!left (
+              ),
+              appointment:appointments!record_id  (
                 date
+                )
             ''')
             .eq('id', widget.recordId)
             .single();
@@ -199,7 +200,9 @@
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Ngày: ${_formatAppointmentDate(record?['appointment'] is List && (record?['appointment'] as List).isNotEmpty ? (record?['appointment'][0]) : null)}',
+                            'Ngày: ${_formatAppointmentDate(
+                                (record?['appointment'] as List?)?.first
+                            )}',
                             style: TextStyle(color: Colors.grey[600]),
                           ),
                         ],
@@ -355,7 +358,7 @@
                   border: Border.all(color: Colors.amber[200]!),
                 ),
                 child: Text(
-                  doctorNote ?? 'No instruction',
+                  doctorNote ?? 'Không có ghi chú',
                   style: const TextStyle(
                     fontSize: 15,
                     color: Color(0xFF744210),

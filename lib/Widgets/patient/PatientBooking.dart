@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 
+// Widget chính cho màn hình đặt lịch khám đa bước của bệnh nhân
 class PatientBooking extends StatefulWidget {
   const PatientBooking({Key? key}) : super(key: key);
 
@@ -10,40 +11,47 @@ class PatientBooking extends StatefulWidget {
   State<PatientBooking> createState() => _PatientBookingState();
 }
 
+// Trạng thái quản lý toàn bộ quy trình đặt lịch khám
 class _PatientBookingState extends State<PatientBooking> {
+  // Khởi tạo client Supabase
   final SupabaseClient supabase = Supabase.instance.client;
+  // Bước hiện tại trong stepper và trạng thái loading
   int _currentStep = 0;
   bool _isLoading = false;
 
-  // Booking Data
+  // Dữ liệu đặt lịch
   String? _selectedCategory; // 'dich_vu', 'bac_si', 'xet_nghiem'
-  Map<String, dynamic>? _selectedItem; // The chosen doctor or service
-  Map<String, dynamic>? _selectedProfile;
+  Map<String, dynamic>? _selectedItem; // Dịch vụ hoặc bác sĩ được chọn
+  Map<String, dynamic>? _selectedProfile; // Hồ sơ bệnh nhân được chọn
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
   String? _selectedTime;
-  
+
+  // Controller tìm kiếm và danh sách bác sĩ đã lọc
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _filteredDoctors = [];
 
-  // Data Lists
+  // Danh sách dữ liệu từ server
   List<Map<String, dynamic>> _availableServices = [];
   List<Map<String, dynamic>> _doctors = [];
   List<Map<String, dynamic>> _profiles = [];
 
   @override
+  // Khởi tạo ban đầu: lấy dữ liệu đặt lịch, hồ sơ và lắng nghe tìm kiếm
   void initState() {
     super.initState();
     _fetchBookingData();
     _fetchProfiles();
     _searchController.addListener(_onSearchChanged);
   }
-  
+
   @override
+  // Giải phóng tài nguyên khi widget bị hủy
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
-  
+
+  // Lọc danh sách bác sĩ theo từ khóa tìm kiếm
   void _onSearchChanged() {
     setState(() {
       _filteredDoctors = _doctors.where((d) {
@@ -54,8 +62,8 @@ class _PatientBookingState extends State<PatientBooking> {
     });
   }
 
+  // Lấy dữ liệu dịch vụ y tế và danh sách bác sĩ từ Supabase (song song để nhanh)
   Future<void> _fetchBookingData() async {
-    // Parallel fetch for speed
     final servicesRes = await supabase.from('medical_services').select();
     final doctorsRes = await supabase.from('users').select('id, name, doctor_info(specialty)').eq('role', 'doctor');
 
@@ -63,11 +71,12 @@ class _PatientBookingState extends State<PatientBooking> {
       setState(() {
         _availableServices = List<Map<String, dynamic>>.from(servicesRes);
         _doctors = List<Map<String, dynamic>>.from(doctorsRes);
-        _filteredDoctors = _doctors; // Init filtered list
+        _filteredDoctors = _doctors;
       });
     }
   }
 
+  // Lấy danh sách hồ sơ bệnh nhân của người dùng hiện tại
   Future<void> _fetchProfiles() async {
     final userId = supabase.auth.currentUser!.id;
     final res = await supabase.from('patient_profiles').select().eq('user_id', userId);
@@ -78,8 +87,7 @@ class _PatientBookingState extends State<PatientBooking> {
     }
   }
 
-  // --- STEPS UI ---
-
+  // Giao diện bước 1: Chọn loại đặt lịch (dịch vụ, bác sĩ, xét nghiệm) hoặc chọn cụ thể
   Widget _buildStep1_Selection() {
     if (_selectedCategory == null) {
       return Column(
@@ -93,15 +101,14 @@ class _PatientBookingState extends State<PatientBooking> {
     }
 
     if (_selectedCategory == 'triage') {
-       // This should trigger navigation, but for stepper logic we might need to handle it in onTap
-       // See _buildCategoryCard modification below
-       return const SizedBox.shrink(); 
+      return const SizedBox.shrink();
     }
 
+    // Hiển thị danh sách dịch vụ hoặc xét nghiệm tương ứng
     if (_selectedCategory == 'dich_vu' || _selectedCategory == 'xet_nghiem') {
       final categoryFilter = _selectedCategory == 'xet_nghiem' ? 'Xét nghiệm' : 'Khám chuyên khoa';
       final list = _availableServices.where((e) => e['category'] == categoryFilter).toList();
-      
+
       return ListView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
@@ -120,8 +127,8 @@ class _PatientBookingState extends State<PatientBooking> {
         },
       );
     }
-    
-    // Doctor Selection with Search
+
+    // Hiển thị danh sách bác sĩ kèm ô tìm kiếm
     return Column(
       children: [
         Padding(
@@ -129,10 +136,10 @@ class _PatientBookingState extends State<PatientBooking> {
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: 'Tìm bác sĩ...',
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0)
+                hintText: 'Tìm bác sĩ...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0)
             ),
           ),
         ),
@@ -151,12 +158,11 @@ class _PatientBookingState extends State<PatientBooking> {
                 onTap: () {
                   setState(() {
                     _selectedItem = doc;
-                    // Add a dummy price for doctor consultation
-                    _selectedItem!['price'] = 150000; 
+                    _selectedItem!['price'] = 150000;
                   });
-                }, 
+                },
                 selected: _selectedItem == doc,
-                 selectedTileColor: Colors.blue.withOpacity(0.1),
+                selectedTileColor: Colors.blue.withOpacity(0.1),
               ),
             );
           },
@@ -165,6 +171,7 @@ class _PatientBookingState extends State<PatientBooking> {
     );
   }
 
+  // Giao diện bước 2: Chọn hồ sơ bệnh nhân
   Widget _buildStep2_Profile() {
     if (_profiles.isEmpty) {
       return Center(
@@ -172,9 +179,8 @@ class _PatientBookingState extends State<PatientBooking> {
           children: [
             const Text('Bạn chưa có hồ sơ nào.'),
             TextButton(
-              onPressed: () { 
-                // Navigate to profile creation or handle inline
-                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vui lòng vào tab Hồ Sơ để tạo mới")));
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vui lòng vào tab Hồ Sơ để tạo mới")));
               },
               child: const Text('Tạo hồ sơ ngay'),
             )
@@ -199,6 +205,7 @@ class _PatientBookingState extends State<PatientBooking> {
     );
   }
 
+  // Giao diện bước 3: Chọn ngày và giờ khám
   Widget _buildStep3_DateTime() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,7 +217,7 @@ class _PatientBookingState extends State<PatientBooking> {
           onDateChanged: (date) {
             setState(() {
               _selectedDate = date;
-              _selectedTime = null; // Reset time when date changes
+              _selectedTime = null;
             });
           },
         ),
@@ -231,7 +238,7 @@ class _PatientBookingState extends State<PatientBooking> {
               label: Text(time),
               selected: isSelected,
               onSelected: (selected) {
-                 setState(() => _selectedTime = selected ? time : null);
+                setState(() => _selectedTime = selected ? time : null);
               },
               selectedColor: Colors.blue,
               labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black),
@@ -242,6 +249,7 @@ class _PatientBookingState extends State<PatientBooking> {
     );
   }
 
+  // Giao diện bước 4: Xác nhận thông tin đặt lịch
   Widget _buildStep4_Confirm() {
     final price = _selectedItem?['price'] ?? 0;
     return Card(
@@ -255,7 +263,7 @@ class _PatientBookingState extends State<PatientBooking> {
             const SizedBox(height: 10),
             _rowDetail('Ngày khám', DateFormat('dd/MM/yyyy').format(_selectedDate)),
             _rowDetail('Giờ khám', _selectedTime ?? '--:--', isBold: true),
-             const Divider(),
+            const Divider(),
             _rowDetail('Phí khám', "${NumberFormat('#,###').format(price)}đ", isBold: true),
           ],
         ),
@@ -263,12 +271,12 @@ class _PatientBookingState extends State<PatientBooking> {
     );
   }
 
+  // Giao diện bước 5: Hướng dẫn thanh toán (hiển thị QR và thông tin chuyển khoản)
   Widget _buildStep5_Payment() {
     return Column(
       children: [
         const Text("Quét mã thanh toán", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 20),
-        // Placeholder QR
         Container(
           width: 200,
           height: 200,
@@ -292,13 +300,12 @@ class _PatientBookingState extends State<PatientBooking> {
     );
   }
 
-  // --- HELPERS ---
-
+  // Widget thẻ chọn loại đặt lịch (dịch vụ, bác sĩ, xét nghiệm, triage)
   Widget _buildCategoryCard(String title, IconData icon, String id, {bool isHighlight = false}) {
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       color: isHighlight ? Colors.orange[50] : Colors.white,
-      shape: isHighlight 
+      shape: isHighlight
           ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.orange.withOpacity(0.5)))
           : null,
       child: ListTile(
@@ -306,7 +313,7 @@ class _PatientBookingState extends State<PatientBooking> {
         title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: isHighlight ? Colors.orange[900] : Colors.black)),
         onTap: () {
           if (id == 'triage') {
-             context.push('/patient/triage');
+            context.push('/patient/triage');
           } else {
             setState(() {
               _selectedCategory = id;
@@ -319,6 +326,7 @@ class _PatientBookingState extends State<PatientBooking> {
     );
   }
 
+  // Widget hiển thị một dòng thông tin chi tiết trong xác nhận
   Widget _rowDetail(String label, String? value, {bool isBold = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -331,90 +339,72 @@ class _PatientBookingState extends State<PatientBooking> {
       ),
     );
   }
-  
+
+  // Widget chip hiển thị icon ngân hàng/thanh toán
   Widget _bankIcon(String name) {
     return Chip(label: Text(name), backgroundColor: Colors.grey[200]);
   }
 
+  // Tìm bác sĩ trống lịch phù hợp (tự động phân bổ khi không chọn bác sĩ cụ thể)
   Future<String?> _findAvailableDoctor(DateTime time) async {
-    // 1. Get all doctors
     if (_doctors.isEmpty) return null;
-    
-    // Filter doctors by specialty if a service is selected
+
     List<Map<String, dynamic>> candidateDoctors = _doctors;
-    
+
+    // Lọc bác sĩ phù hợp với dịch vụ nếu chọn dịch vụ chuyên khoa
     if (_selectedCategory == 'dich_vu' && _selectedItem != null) {
       final serviceName = _selectedItem!['name'] as String;
-      // Heuristic: Map Service Name to Specialty or assume doctors with matching specialty
-      // For now, let's try to find doctors whose specialty matches the service category
-      // Or we can try to matches service name partially. 
-      // Example: Service "Khám Tim Mạch" -> Doctor Specialty "Tim Mạch"
-      
-      // Let's refine this: If we can't easily map, we might need to rely on 'category' from service
-      final category = _selectedItem!['category'] as String?;
-      
-      // If we have a category like "Tim mạch", we can filter. 
-      // Let's check if the doctor's specialty is contained in the service name or vice versa.
-      
+
       candidateDoctors = _doctors.where((d) {
         final info = d['doctor_info'] ?? {};
         final specialty = (info['specialty'] as String?)?.toLowerCase() ?? '';
-        
-        if (specialty == 'general' || specialty == 'đa khoa') return true; // General doctors can do basic services? Maybe not.
-        
-        // Check match
+
+        if (specialty == 'general' || specialty == 'đa khoa') return true;
+
         if (serviceName.toLowerCase().contains(specialty)) return true;
-        
-        return false; 
+
+        return false;
       }).toList();
-      
-      // Fallback: If no specialist found, maybe return all? No, that's dangerous.
-      // If filter result is empty, maybe we should just keep it empty or fallback to General if appropriate.
-      // Let's keep existing behavior if candidateDoctors becomes empty to avoid blocking, OR be strict.
-      // User complaint implies we should be strict.
+
+      // Fallback về bác sĩ đa khoa nếu không tìm thấy chuyên khoa phù hợp
       if (candidateDoctors.isEmpty) {
-         // Try to find "General" / "Đa khoa" doctors as fallback?
-         candidateDoctors = _doctors.where((d) {
-            final s = ((d['doctor_info']?['specialty'] as String?) ?? '').toLowerCase();
-            return s == 'general' || s == 'đa khoa';
-         }).toList();
+        candidateDoctors = _doctors.where((d) {
+          final s = ((d['doctor_info']?['specialty'] as String?) ?? '').toLowerCase();
+          return s == 'general' || s == 'đa khoa';
+        }).toList();
       }
     }
 
     final allDoctorIds = candidateDoctors.map((d) => d['id'] as String).toList();
     if (allDoctorIds.isEmpty) return null;
 
-    // 2. Get busy doctors at this time
-    // Note: This is a simple exact match check. 
-    // In production, you'd check time ranges (e.g. +/- 30 mins).
+    // Lấy danh sách bác sĩ đã có lịch tại thời điểm chọn
     final timeStr = time.toIso8601String();
-    
-    // We can't easily query "not in" with complex time logic in one go without a stored procedure 
-    // or loading all appointments for that time.
-    // Let's load appointments near this time.
+
     final response = await supabase
         .from('appointments')
         .select('doctor_id')
-        .eq('date', timeStr); // Strict equality for now as we use slots
-    
+        .eq('date', timeStr);
+
     final busyDoctorIds = List<Map<String, dynamic>>.from(response)
         .map((a) => a['doctor_id'] as String?)
         .where((id) => id != null)
         .toSet();
 
-    // 3. Filter available
+    // Lọc ra bác sĩ còn trống
     final available = allDoctorIds.where((id) => !busyDoctorIds.contains(id)).toList();
-    
+
     if (available.isEmpty) return null;
-    
-    // 4. Pick random or first
+
+    // Chọn ngẫu nhiên một bác sĩ trống
     available.shuffle();
     return available.first;
   }
 
+  // Thực hiện gửi dữ liệu đặt lịch lên server
   Future<void> _submitBooking() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final user = supabase.auth.currentUser;
       if (user == null) throw Exception("User not logged in");
@@ -422,8 +412,8 @@ class _PatientBookingState extends State<PatientBooking> {
       final profileName = _selectedProfile?['full_name'] ?? 'Không xác định';
       final serviceName = _selectedItem?['name'] ?? 'Khám tổng quát';
       final notes = "Bệnh nhân: $profileName. Dịch vụ: $serviceName";
-      
-      // Combine Date and Time
+
+      // Kết hợp ngày và giờ thành datetime đầy đủ
       DateTime finalDateTime = _selectedDate;
       if (_selectedTime != null) {
         final parts = _selectedTime!.split(':');
@@ -432,19 +422,18 @@ class _PatientBookingState extends State<PatientBooking> {
         finalDateTime = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, hour, minute);
       }
 
-      // Determine doctor_id
+      // Xác định doctor_id: nếu chọn bác sĩ cụ thể thì dùng, còn lại tự động phân bổ
       String? doctorId;
       if (_selectedCategory == 'bac_si') {
         doctorId = _selectedItem?['id'];
       } else {
-        // Auto-assign
         doctorId = await _findAvailableDoctor(finalDateTime);
         if (doctorId == null) {
-           throw Exception("Không tìm thấy bác sĩ trống lịch vào giờ này. Vui lòng chọn giờ khác.");
+          throw Exception("Không tìm thấy bác sĩ trống lịch vào giờ này. Vui lòng chọn giờ khác.");
         }
       }
-      
-      // 1. Create Record first
+
+      // Tạo bản ghi hồ sơ khám (records)
       final recordRes = await supabase.from('records').insert({
         'patient_id': user.id,
         'doctor_id': doctorId,
@@ -452,19 +441,19 @@ class _PatientBookingState extends State<PatientBooking> {
         'notes': "Booking Init: $notes",
         'symptoms': _selectedCategory == 'dich_vu' ? serviceName : 'Khám theo yêu cầu'
       }).select().single();
-      
+
       final recordId = recordRes['id'];
 
-      // 2. Create Appointment linked to Record
+      // Tạo lịch hẹn (appointments) liên kết với record
       await supabase.from('appointments').insert({
-        'patient_id': user.id, 
+        'patient_id': user.id,
         'doctor_id': doctorId,
-        'record_id': recordId, // Linked!
-        'date': finalDateTime.toIso8601String(), 
+        'record_id': recordId,
+        'date': finalDateTime.toIso8601String(),
         'status': 'Pending',
         'type': _selectedCategory,
         'notes': notes,
-        'time_slot': _selectedTime, 
+        'time_slot': _selectedTime,
       });
 
       if (mounted) {
@@ -485,6 +474,7 @@ class _PatientBookingState extends State<PatientBooking> {
   }
 
   @override
+  // Xây dựng giao diện chính với Stepper dọc
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -497,6 +487,7 @@ class _PatientBookingState extends State<PatientBooking> {
         type: StepperType.vertical,
         currentStep: _currentStep,
         onStepContinue: () {
+          // Kiểm tra dữ liệu bắt buộc trước khi chuyển bước
           if (_currentStep == 0 && _selectedItem == null) {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vui lòng chọn dịch vụ hoặc bác sĩ")));
             return;
@@ -506,10 +497,10 @@ class _PatientBookingState extends State<PatientBooking> {
             return;
           }
           if (_currentStep == 2 && _selectedTime == null) {
-             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vui lòng chọn giờ khám")));
-             return;
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vui lòng chọn giờ khám")));
+            return;
           }
-          
+
           if (_currentStep < 4) {
             setState(() => _currentStep += 1);
           } else {
@@ -517,6 +508,7 @@ class _PatientBookingState extends State<PatientBooking> {
           }
         },
         onStepCancel: () {
+          // Quay lại bước trước hoặc thoát màn hình
           if (_currentStep > 0) {
             setState(() => _currentStep -= 1);
           } else {
@@ -527,35 +519,37 @@ class _PatientBookingState extends State<PatientBooking> {
             }
           }
         },
+        // Tùy chỉnh nút điều khiển stepper
         controlsBuilder: (context, details) {
-           return Padding(
-             padding: const EdgeInsets.only(top: 20),
-             child: Row(
-               children: [
-                 Expanded(
-                   child: ElevatedButton(
-                     onPressed: details.onStepContinue,
-                     style: ElevatedButton.styleFrom(
-                       backgroundColor: Colors.blue,
-                       padding: const EdgeInsets.symmetric(vertical: 12),
-                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
-                     ),
-                     child: _isLoading 
+          return Padding(
+            padding: const EdgeInsets.only(top: 20),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: details.onStepContinue,
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
+                    ),
+                    child: _isLoading
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                         : Text(_currentStep == 4 ? 'Hoàn Tất' : 'Tiếp Tục', style: const TextStyle(color: Colors.white, fontSize: 16)),
-                   ),
-                 ),
-                 if (_currentStep > 0) ...[
-                   const SizedBox(width: 10),
-                   TextButton(
-                     onPressed: details.onStepCancel,
-                     child: const Text('Quay lại', style: TextStyle(color: Colors.grey)),
-                   ),
-                 ]
-               ],
-             ),
-           );
+                  ),
+                ),
+                if (_currentStep > 0) ...[
+                  const SizedBox(width: 10),
+                  TextButton(
+                    onPressed: details.onStepCancel,
+                    child: const Text('Quay lại', style: TextStyle(color: Colors.grey)),
+                  ),
+                ]
+              ],
+            ),
+          );
         },
+        // Danh sách các bước trong quy trình đặt lịch
         steps: [
           Step(title: const Text('Chọn'), content: _buildStep1_Selection(), isActive: _currentStep >= 0, state: _currentStep > 0 ? StepState.complete : StepState.editing),
           Step(title: const Text('Hồ sơ'), content: _buildStep2_Profile(), isActive: _currentStep >= 1, state: _currentStep > 1 ? StepState.complete : StepState.editing),
@@ -567,20 +561,21 @@ class _PatientBookingState extends State<PatientBooking> {
     );
   }
 
+  // Xử lý nút back/close trên AppBar tùy theo trạng thái hiện tại
   Widget? _buildLeading() {
     if (_selectedCategory != null && _currentStep == 0) {
       return IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => setState(() {
-        _selectedCategory = null; 
+        _selectedCategory = null;
         _selectedItem = null;
       }));
     }
     return IconButton(
-      icon: const Icon(Icons.close), 
+      icon: const Icon(Icons.close),
       onPressed: () {
         if (context.canPop()) {
-           context.pop();
+          context.pop();
         } else {
-           context.go('/patient/dashboard');
+          context.go('/patient/dashboard');
         }
       },
     );
