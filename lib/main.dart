@@ -37,9 +37,16 @@ class MyApp extends StatelessWidget {
       title: 'MediHouse',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.green,
+        ).copyWith(
+          background: const Color(0xFFF5F7FA),
+          surface: const Color(0xFFF5F7FA),
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF5F7FA),
       ),
+
       routerConfig: MediRouter.router,
     );
   }
