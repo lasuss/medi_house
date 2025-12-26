@@ -7,15 +7,13 @@ class CCCDScanner extends StatefulWidget {
   @override
   State<CCCDScanner> createState() => _CCCDScannerState();
 }
-
+///Hàm hiển thị giao diện quét CCCD
 class _CCCDScannerState extends State<CCCDScanner> {
   bool scanned = false;
   MobileScannerController cameraController = MobileScannerController();
 
   Map<String, String>? _parseCCCD(String qrData) {
     try {
-      // Vietnam CCCD QR format:
-      // ID|Old_ID|Name|DOB|Gender|Address|DateOfIssue
       final parts = qrData.split('|');
       if (parts.length >= 6) {
         return {
@@ -35,13 +33,12 @@ class _CCCDScannerState extends State<CCCDScanner> {
   }
 
   String _formatDate(String rawDate) {
-    // rawDate is usually ddMMyyyy
     if (rawDate.length == 8) {
       return "${rawDate.substring(0, 2)}/${rawDate.substring(2, 4)}/${rawDate.substring(4)}";
     }
     return rawDate;
   }
-
+///Hàm hiển thị kết quả quét
   void _showResultSheet(Map<String, String> data) {
     showModalBottomSheet(
       context: context,
@@ -77,8 +74,8 @@ class _CCCDScannerState extends State<CCCDScanner> {
                 height: 50,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context); // Close sheet
-                    Navigator.pop(context, data); // Return data to caller
+                    Navigator.pop(context);
+                    Navigator.pop(context, data);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
@@ -86,7 +83,7 @@ class _CCCDScannerState extends State<CCCDScanner> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text('Xác nhận & Sử dụng', style: TextStyle(color: Colors.white, fontSize: 16)),
+                  child: const Text('Xác nhận và Sử dụng', style: TextStyle(color: Colors.white, fontSize: 16)),
                 ),
               ),
             ],
@@ -95,11 +92,11 @@ class _CCCDScannerState extends State<CCCDScanner> {
       },
     ).whenComplete(() {
        setState(() {
-        scanned = false; // Allow rescanning
+        scanned = false;
       });
     });
   }
-
+///Hàm hiển thị dòng dữ liệu
   Widget _buildDataRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
@@ -117,7 +114,7 @@ class _CCCDScannerState extends State<CCCDScanner> {
       ),
     );
   }
-
+///Hàm hiển thị giao diện chính
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -178,7 +175,6 @@ class _CCCDScannerState extends State<CCCDScanner> {
       ),
     );
   }
-
    Widget _corner(bool isTop, bool isLeft) {
     return Container(
       width: 20,
@@ -193,7 +189,6 @@ class _CCCDScannerState extends State<CCCDScanner> {
       ),
     );
   }
-
   @override
   void dispose() {
     cameraController.dispose();

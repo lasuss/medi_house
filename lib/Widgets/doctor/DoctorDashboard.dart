@@ -10,7 +10,7 @@ class DoctorDashboard extends StatefulWidget {
   @override
   State<DoctorDashboard> createState() => _DoctorDashboardState();
 }
-
+///Hàm hiển thị giao diện trang quản lý
 class _DoctorDashboardState extends State<DoctorDashboard> {
   final supabase = Supabase.instance.client;
 
@@ -27,7 +27,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
     super.initState();
     _loadDashboardData();
   }
-
+///Hàm tải dữ liệu trang quản lý
   Future<void> _loadDashboardData() async {
     final doctorId = supabase.auth.currentUser!.id;
     final doctorRes = await supabase
@@ -36,7 +36,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
         .eq('id', doctorId);
     final fetchedName = doctorRes.first['name'];
 
-    // ===== Patients (distinct) =====
+    /// ===== Patients (distinct) =====
     final patientRes = await supabase
         .from('records')
         .select('patient_id')
@@ -46,14 +46,14 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
         .map((e) => e['patient_id'])
         .toSet();
 
-    // ===== Pending reports =====
+    /// ===== Pending reports =====
     final pendingRes = await supabase
         .from('records')
         .select('id')
         .eq('doctor_id', doctorId)
         .eq('status', 'Pending');
 
-    // ===== Records list =====
+    /// ===== Records list =====
     final recordRes = await supabase
         .from('records')
         .select('''
@@ -76,7 +76,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
       isLoading = false;
     });
   }
-
+///Hàm hiển thị giao diện chính
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -89,7 +89,6 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Welcome Header
               Text(
                 'Xin chào, $_doctorName',
                 style: const TextStyle(
@@ -105,7 +104,6 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
               ),
               const SizedBox(height: 24),
 
-              // Quick Stats
               Row(
                 children: [
                   _buildStatCard(
@@ -125,7 +123,6 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
               ),
               const SizedBox(height: 24),
 
-              // Records List
               const Text(
                 "Hồ sơ gần đây",
                 style: TextStyle(
@@ -217,7 +214,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
       ),
     );
   }
-
+///Hàm hiển thị thẻ thống kê
   Widget _buildStatCard(
       String title, String value, IconData icon, Color color) {
     return Expanded(
@@ -267,7 +264,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
     );
   }
 }
-
+///Hàm hiển thị giao diện tìm kiếm
 class DoctorSearchDelegate extends SearchDelegate {
   final List<Map<String, dynamic>> records;
 

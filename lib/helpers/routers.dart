@@ -55,11 +55,8 @@ import 'package:medi_house/Widgets/receptionist/ReceptionistProfile.dart';
 
 class MediRouter {
   static final GoRouter router = GoRouter(
-    initialLocation: '/login', // Start at the login screen
+    initialLocation: '/login',
     routes: [
-      // =======================================================================
-      // Routes that DO NOT have the main AppShell (e.g., login, register)
-      // =======================================================================
       GoRoute(
         path: '/login',
         pageBuilder: (context, state) {
@@ -80,7 +77,6 @@ class MediRouter {
         pageBuilder: (context, state) {
           return CustomTransitionPage<void>(
             key: state.pageKey,
-            // This uses the RegisterPage created in lib/pages/
             child: const RegisterPage(title: 'Đăng ký'),
             transitionsBuilder: (context, animation, secondaryAnimation, child) {
               return FadeTransition(
@@ -92,19 +88,12 @@ class MediRouter {
         },
       ),
 
-      // =======================================================================
-      // A single ShellRoute wraps all pages that should display with the
-      // bottom navigation bar within the AppShell.
-      // =======================================================================
       ShellRoute(
         pageBuilder: (context, state, child) {
           final String location = state.uri.toString();
-          int currentIndex = 0; // Default index
-
-          // This logic determines which tab is active in the BottomNavigationBar
-          // based on the current URL.
+          int currentIndex = 0;
           
-          // Patient Routes
+          /// Patient Routes
           if (location.startsWith('/patient/dashboard')) {
             currentIndex = 0;
           } else if (location.startsWith('/patient/appointments')) {
@@ -116,7 +105,7 @@ class MediRouter {
           } else if (location.startsWith('/patient/profile')) {
             currentIndex = 4;
           }
-          // Doctor Routes
+          /// Doctor Routes
           else if (location.startsWith('/doctor/dashboard')) {
             currentIndex = 0;
           } else if (location.startsWith('/doctor/schedule')) {
@@ -128,7 +117,7 @@ class MediRouter {
           } else if (location.startsWith('/doctor/profile')) {
             currentIndex = 4;
           }
-          // Pharmacy Routes
+          /// Pharmacy Routes
           else if (location.startsWith('/pharmacy/pending')) {
             currentIndex = 0;
           } else if (location.startsWith('/pharmacy/filled')) {
@@ -136,13 +125,13 @@ class MediRouter {
           } else if (location.startsWith('/pharmacy/inventory')) {
             currentIndex = 2;
           }
-          // Admin Routes
+          /// Admin Routes
           else if (location.startsWith('/admin/dashboard')) {
             currentIndex = 0;
           } else if (location.startsWith('/admin/users')) {
             currentIndex = 1;
           }
-          // Receptionist Routes
+          /// Receptionist Routes
           else if (location.startsWith('/receptionist/dashboard')) {
             currentIndex = 0;
           } else if (location.startsWith('/receptionist/profile')) {
@@ -157,7 +146,7 @@ class MediRouter {
           );
         },
         routes: [
-          // --- Patient Routes ---
+          /// --- Patient Routes ---
           GoRoute(
             path: '/patient/dashboard',
             pageBuilder: (context, state) => const NoTransitionPage(child: PatientDashboard()),
@@ -224,7 +213,7 @@ class MediRouter {
             path: '/patient/show_qr',
             pageBuilder: (context, state) => const MaterialPage(child: PatientShowQR(), fullscreenDialog: true),
           ),
-          // --- Doctor Routes ---
+          /// --- Doctor Routes ---
           GoRoute(
             path: '/doctor/dashboard',
             pageBuilder: (context, state) => const NoTransitionPage(child: DoctorDashboard()),
@@ -277,7 +266,7 @@ class MediRouter {
             pageBuilder: (context, state) => const MaterialPage(child: DoctorScanQR(), fullscreenDialog: true),
           ),
 
-          // --- Pharmacy Routes ---
+          /// --- Pharmacy Routes ---
           GoRoute(
             path: '/pharmacy/pending',
             pageBuilder: (context, state) => const NoTransitionPage(child: PharmacyPending()),
@@ -291,7 +280,7 @@ class MediRouter {
             pageBuilder: (context, state) => const NoTransitionPage(child: PharmacyInventory()),
           ),
 
-          // --- Admin Routes ---
+          /// --- Admin Routes ---
           GoRoute(
             path: '/admin/dashboard',
             pageBuilder: (context, state) => const NoTransitionPage(child: AdminDashboard()),
@@ -301,7 +290,7 @@ class MediRouter {
             pageBuilder: (context, state) => const NoTransitionPage(child: AdminUserManagement()),
           ),
 
-          // --- Receptionist Routes ---
+          /// --- Receptionist Routes ---
           GoRoute(
             path: '/receptionist/dashboard',
             pageBuilder: (context, state) => const NoTransitionPage(child: ReceptionistDashboard()),
@@ -316,23 +305,13 @@ class MediRouter {
           ),
         ],
       ),
-
-      // =======================================================================
-      // Detail pages or pages that are pushed on top of the shell
-      // =======================================================================
-
-
-
     ],
-    // Redirect to login if the user is not authenticated.
-    // You would typically implement logic here to check the auth state.
     redirect: (BuildContext context, GoRouterState state) {
       final bool loggedIn = UserManager.instance.isLoggedIn;
       final bool isLoggingIn = state.uri.toString() == '/login' || state.uri.toString() == '/register';
 
       if (!loggedIn && !isLoggingIn) return '/login';
       if (loggedIn && isLoggingIn) {
-        // Redirect to dashboard based on role if already logged in
         final role = UserManager.instance.role;
         if (role == UserRole.patient) return '/patient/dashboard';
         if (role == UserRole.doctor) return '/doctor/dashboard';

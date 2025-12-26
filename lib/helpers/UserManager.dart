@@ -3,7 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UserManager {
-  // Singleton pattern
   static final UserManager _instance = UserManager._internal();
 
   factory UserManager() {
@@ -24,20 +23,18 @@ class UserManager {
 
   bool get isLoggedIn => _supabaseUser != null;
 
-  /// Load user data from Supabase and SharedPreferences
+  /// Tải dữ liệu người dùng từ Supabase và SharedPreferences
   Future<void> loadUser() async {
     final session = Supabase.instance.client.auth.currentSession;
     _supabaseUser = session?.user;
 
     if (_supabaseUser != null) {
-      // Try to load role from SharedPreferences first for speed
       final prefs = await SharedPreferences.getInstance();
       final roleString = prefs.getString('user_role');
 
       if (roleString != null) {
         _role = UserRole.fromString(roleString);
       } else {
-        // If not in prefs, fetch from DB (fallback)
         await _fetchAndSaveRole();
       }
     } else {
@@ -45,7 +42,7 @@ class UserManager {
     }
   }
 
-  /// Fetch role from Supabase and save to SharedPreferences
+  /// Lấy thông tin vai trò từ Supabase và lưu vào SharedPreferences.
   Future<void> _fetchAndSaveRole() async {
     if (_supabaseUser == null) return;
 
@@ -66,14 +63,14 @@ class UserManager {
     }
   }
 
-  /// Save role to SharedPreferences
+  /// Lưu vai trò vào SharedPreferences
   Future<void> saveUserRole(String roleStr) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_role', roleStr);
     _role = UserRole.fromString(roleStr);
   }
 
-  /// Clear user data on logout
+  /// Xóa dữ liệu người dùng khi đăng xuất.
   Future<void> clearUser() async {
     _supabaseUser = null;
     _role = null;

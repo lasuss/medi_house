@@ -15,7 +15,18 @@ class _PatientDashboardState extends State<PatientDashboard> {
   String _patientName = 'Bệnh nhân';
   String? _avatarUrl;
   List<Map<String, dynamic>> _records = [];
+  List<Map<String, dynamic>> _filteredRecords = []; // Added
   bool _isLoading = true;
+
+  // Added filter state
+  final List<String> _filters = [
+    'Tất cả',
+    'Kết quả khám bệnh',
+    'Kết quả xét nghiệm',
+    'Đơn thuốc'
+  ];
+  String _selectedFilter = 'Tất cả';
+
 
   @override
   void initState() {
@@ -35,13 +46,14 @@ class _PatientDashboardState extends State<PatientDashboard> {
       // 2. Fetch Medical Records (Results)
       final recordsRes = await supabase
           .from('records')
-          .select('*, doctor:doctor_id(id, name), appointments(*)') 
+          .select('*, doctor:doctor_id(id, name), appointments(*)')
           .eq('patient_id', userId)
           .order('created_at', ascending: false);
-      
+
       if (mounted) {
         setState(() {
           _records = List<Map<String, dynamic>>.from(recordsRes);
+          _filterRecords(); // Initially filter records
           _isLoading = false;
         });
       }
@@ -51,12 +63,53 @@ class _PatientDashboardState extends State<PatientDashboard> {
     }
   }
 
+  // Added helper to categorize records
+  String _getRecordType(Map<String, dynamic> record) {
+    // Heuristics based on appointment type first
+    final appointments = record['appointments'];
+    if (appointments != null && (appointments is List) && appointments.isNotEmpty) {
+       final apptType = appointments[0]['type'];
+       if (apptType == 'xet_nghiem') {
+          return 'Kết quả xét nghiệm';
+       } else if (apptType == 'dich_vu' || apptType == 'bac_si') {
+          return 'Kết quả khám bệnh';
+       }
+    }
+
+    // Fallback heuristics based on content
+    final symptoms = (record['symptoms'] as String? ?? '').toLowerCase();
+    final diagnosis = (record['diagnosis'] as String? ?? '').toLowerCase();
+    final notes = (record['notes'] as String? ?? '').toLowerCase();
+
+    if (symptoms.contains('đơn thuốc') || diagnosis.contains('đơn thuốc') || notes.contains('đơn thuốc')) {
+      return 'Đơn thuốc';
+    }
+    if (symptoms.contains('xét nghiệm') || diagnosis.contains('xét nghiệm') || notes.contains('xét nghiệm')) {
+      return 'Kết quả xét nghiệm';
+    }
+
+    // Default to a general examination result
+    return 'Kết quả khám bệnh';
+  }
+
+  // Added filter logic
+  void _filterRecords() {
+    if (_selectedFilter == 'Tất cả') {
+      _filteredRecords = List<Map<String, dynamic>>.from(_records);
+    } else {
+      _filteredRecords = _records.where((record) {
+        return _getRecordType(record) == _selectedFilter;
+      }).toList();
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA), // Light grey background
       body: SafeArea(
-        child: _isLoading 
+        child: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(20),
@@ -65,7 +118,9 @@ class _PatientDashboardState extends State<PatientDashboard> {
                 children: [
                   _buildHeader(),
                   const SizedBox(height: 24),
-                  _buildSectionTitle('Kết quả khám & Xét nghiệm'),
+                  _buildSectionTitle('Kết quả khám và Xét nghiệm'),
+                  const SizedBox(height: 16),
+                  _buildFilterChips(),
                   const SizedBox(height: 12),
                   _buildRecordsList(),
                 ],
@@ -138,8 +193,49 @@ class _PatientDashboardState extends State<PatientDashboard> {
     );
   }
 
+  // Added Widget for filter chips
+  Widget _buildFilterChips() {
+    return SizedBox(
+      height: 36,
+      child: ListView.separated(
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
+        scrollDirection: Axis.horizontal,
+        itemCount: _filters.length,
+        itemBuilder: (context, index) {
+          final filter = _filters[index];
+          final isSelected = _selectedFilter == filter;
+          return ChoiceChip(
+            label: Text(filter),
+            selected: isSelected,
+            onSelected: (selected) {
+              if (selected) {
+                setState(() {
+                  _selectedFilter = filter;
+                  _filterRecords();
+                });
+              }
+            },
+            backgroundColor: Colors.white,
+            selectedColor: Colors.blue.withOpacity(0.1),
+            labelStyle: TextStyle(
+              color: isSelected ? Colors.blue[800] : Colors.grey[700],
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            ),
+            shape: StadiumBorder(
+              side: BorderSide(
+                color: isSelected ? Colors.blue : Colors.grey[300]!,
+                width: 1.5,
+              ),
+            ),
+            showCheckmark: false,
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildRecordsList() {
-    if (_records.isEmpty) {
+    if (_filteredRecords.isEmpty) { // Using filtered list
       return Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
@@ -152,7 +248,10 @@ class _PatientDashboardState extends State<PatientDashboard> {
               Icon(Icons.assignment_outlined, size: 48, color: Colors.grey[300]),
               const SizedBox(height: 12),
               Text(
-                'Chưa có hồ sơ khám bệnh nào',
+                _selectedFilter == 'Tất cả'
+                  ? 'Chưa có hồ sơ khám bệnh nào'
+                  : 'Không tìm thấy kết quả cho "$_selectedFilter"',
+                textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey[500]),
               ),
             ],
@@ -164,16 +263,16 @@ class _PatientDashboardState extends State<PatientDashboard> {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _records.length,
+      itemCount: _filteredRecords.length, // Using filtered list
       itemBuilder: (context, index) {
-        final record = _records[index];
+        final record = _filteredRecords[index]; // Using filtered list
         final created = DateTime.parse(record['created_at']).toLocal();
         final doctorMap = record['doctor']; // Can be null or Map
         String doctorName = 'Bác sĩ';
         if (doctorMap != null && doctorMap is Map) {
              doctorName = doctorMap['name'] ?? 'Bác sĩ';
         }
-        
+
         // Try to get appointment time
         String? timeDisplay;
         final appointments = record['appointments'];
@@ -186,43 +285,34 @@ class _PatientDashboardState extends State<PatientDashboard> {
               timeDisplay = timeSlot.isNotEmpty ? "$timeSlot - $dateStr" : DateFormat('dd/MM/yyyy HH:mm').format(date);
            }
         }
-        
-        // Determine type and details based on appointment
-        String typeDisplay = 'Phiếu khám';
-        IconData icon = Icons.medical_services_outlined;
-        Color iconColor = Colors.blue;
+
+        // Determine type and details based on the record type
+        String typeDisplay;
+        IconData icon;
+        Color iconColor;
         String? doctorDisplay = doctorName;
         
-        if (appointments != null && (appointments is List) && appointments.isNotEmpty) {
-           final apptType = appointments[0]['type'];
-           // 'dich_vu', 'bac_si', 'xet_nghiem'
-           if (apptType == 'xet_nghiem') {
-              typeDisplay = 'Phiếu Xét Nghiệm';
-              icon = Icons.biotech;
-              iconColor = Colors.purple;
-              doctorDisplay = null; // Hide doctor for lab
-           } else if (apptType == 'dich_vu') {
-              typeDisplay = 'Khám Dịch Vụ';
-              icon = Icons.medical_services_outlined;
-              iconColor = Colors.orange;
-           } else if (apptType == 'bac_si') {
-              typeDisplay = 'Khám Theo Bác Sĩ';
-              icon = Icons.person_search;
-              iconColor = Colors.blue;
-           }
-        } else {
-            // Fallback heuristics
-            final symptoms = (record['symptoms'] as String? ?? '').toLowerCase();
-            if (symptoms.contains('xét nghiệm')) {
-              typeDisplay = 'Kết quả xét nghiệm';
-              icon = Icons.biotech;
-              iconColor = Colors.purple;
-            } else if (symptoms.contains('đơn thuốc')) {
-              typeDisplay = 'Đơn thuốc';
-              icon = Icons.medication_outlined;
-              iconColor = Colors.green;
-            }
+        String recordType = _getRecordType(record);
+        
+        switch (recordType) {
+          case 'Kết quả xét nghiệm':
+            typeDisplay = 'Kết quả xét nghiệm';
+            icon = Icons.biotech;
+            iconColor = Colors.purple;
+            doctorDisplay = null; // Hide doctor for lab tests
+            break;
+          case 'Đơn thuốc':
+            typeDisplay = 'Đơn thuốc';
+            icon = Icons.medication_outlined;
+            iconColor = Colors.green;
+            break;
+          case 'Kết quả khám bệnh':
+          default:
+            typeDisplay = 'Kết quả khám bệnh';
+            icon = Icons.medical_services_outlined;
+            iconColor = Colors.blue;
         }
+
 
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -288,7 +378,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                                       Text(
                                         "Hoàn thành",
                                         style: TextStyle(
-                                          fontSize: 10, 
+                                          fontSize: 10,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.green[700]
                                         ),
@@ -328,7 +418,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                                 ],
                               ),
                             ),
-                          
+
                           Row(
                             children: [
                               Icon(Icons.history, size: 12, color: Colors.grey[500]),

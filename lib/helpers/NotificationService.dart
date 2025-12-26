@@ -12,13 +12,12 @@ class NotificationService {
   factory NotificationService() => _instance;
 
   NotificationService._internal();
-
+///1. Khởi tạo Firebase Messaging
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
   Future<void> initialize() async {
-    // 1. Request Permission
     NotificationSettings settings = await _firebaseMessaging.requestPermission(
       alert: true,
       badge: true,
@@ -26,17 +25,15 @@ class NotificationService {
     );
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      print('!!!!!!!! [NotificationService] User granted permission !!!!!!!!');
+      print('!!!!!!!! [NotificationService] Người dùng đã được cấp quyền !!!!!!!!');
     } else {
-      print('!!!!!!!! [NotificationService] User declined permission !!!!!!!!');
+      print('!!!!!!!! [NotificationService] Người dùng đã từ chối quyền !!!!!!!!');
       return; 
     }
 
     print('!!!!!!!! [NotificationService] kIsWeb: $kIsWeb !!!!!!!!');
 
-    // 2. Setup Local Notifications (for foreground)
-    // On Web, local notifications are less common or handled by SW. 
-    // We can conditionally init for Android/iOS.
+    /// 2. Thiết lập thông báo cục bộ (cho ứng dụng chạy nền)
     if (!kIsWeb) {
       print('!!!!!!!! [NotificationService] Initializing Local Notifications... !!!!!!!!');
       const AndroidInitializationSettings initializationSettingsAndroid =
@@ -54,10 +51,9 @@ class NotificationService {
         await _flutterLocalNotificationsPlugin.initialize(initializationSettings);
         print('!!!!!!!! [NotificationService] Local Notifications Initialized. !!!!!!!!');
 
-        // Create the High Importance Channel explicitly (Required for Android 8.0+)
         const AndroidNotificationChannel channel = AndroidNotificationChannel(
-          'high_importance_channel', // id
-          'High Importance Notifications', // title
+          'high_importance_channel',
+          'High Importance Notifications',
           description: 'This channel is used for important notifications.',
           importance: Importance.max,
         );
@@ -72,13 +68,11 @@ class NotificationService {
       }
     }
 
-    // 3. Handle Foreground Messages (FCM)
+    /// 3. Xử lý các thông báo nền trước (FCM)
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       RemoteNotification? notification = message.notification;
       AndroidNotification? android = message.notification?.android;
 
-      // On Web, notification is null usually if window is in focus, or handled by browser.
-      // On Android, we show local notification.
       if (!kIsWeb && notification != null && android != null) {
         _showLocalNotification(
           title: message.notification?.title ?? 'MediHouse',
@@ -87,27 +81,26 @@ class NotificationService {
       }
     });
 
-    // 4. Get and Save Token (Attempt immediately)
+    /// 4. Nhận và lưu mã thông báo (Hãy thử ngay lập tức)
     print('!!!!!!!! [NotificationService] calling _saveTokenToSupabase()... !!!!!!!!');
     await _saveTokenToSupabase();
 
-    // 5. Listen for token refresh
+    /// 5. Theo dõi để làm mới mã thông báo
     _firebaseMessaging.onTokenRefresh.listen((newToken) {
       _saveTokenToSupabase(token: newToken);
     });
 
-    // 6. Listen for Auth State Changes (Crucial for saving token after login)
+    /// 6. Theo dõi sự thay đổi trạng thái xác thực (Điều này rất quan trọng để lưu mã thông báo sau khi đăng nhập)
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       print('!!!!!!!! [NotificationService] Auth State Change: ${data.event} !!!!!!!!');
       if (data.session != null && (data.event == AuthChangeEvent.signedIn || data.event == AuthChangeEvent.initialSession)) {
         print('!!!!!!!! [NotificationService] User is signed in. Attempting to save token... !!!!!!!!');
         _saveTokenToSupabase();
-        _listenToDatabaseNotifications(); // Start listening for in-app alerts
+        _listenToDatabaseNotifications();
       }
     });
   }
 
-  // Monitor Supabase 'notifications' table for New Inserts (Realtime)
   void _listenToDatabaseNotifications() {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return;
@@ -167,7 +160,6 @@ class NotificationService {
       if (token == null) {
         debugPrint('[NotificationService] Retrieving FCM Token from Firebase...');
         token = await _firebaseMessaging.getToken(
-            // vapidKey: 'YOUR_VAPID_KEY'
             );
       }
     } catch (e) {

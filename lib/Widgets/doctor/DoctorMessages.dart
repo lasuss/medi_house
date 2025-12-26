@@ -27,7 +27,7 @@ class _DoctorMessagesState extends State<DoctorMessages> {
     _myId = _supabase.auth.currentUser!.id;
     _setupConversationsStream();
   }
-
+///Hàm thiết lập và xử lý luồng cuộc trò chuyện
   void _setupConversationsStream() {
     _conversationsStream = _supabase
         .from('messages')
@@ -38,19 +38,14 @@ class _DoctorMessagesState extends State<DoctorMessages> {
           final myMessages = messages.where((m) => 
             (m.senderId == _myId || m.receiverId == _myId) && 
             m.channelId == null && 
-            m.receiverId != null // Ensure it's a DM
+            m.receiverId != null
           ).toList();
-
-          // Group by other user and count unread
           final Map<String, Message> lastMessages = {};
           final Map<String, int> unreadCounts = {};
           final Set<String> userIdsToFetch = {};
 
           for (var msg in myMessages) {
-            // Safe because we filtered out null receiverId if sender is me
             final otherId = (msg.senderId == _myId ? msg.receiverId : msg.senderId)!;
-            
-            // Track unread
             if (msg.receiverId == _myId && !msg.isRead) {
                unreadCounts[otherId] = (unreadCounts[otherId] ?? 0) + 1;
             }
@@ -93,7 +88,7 @@ class _DoctorMessagesState extends State<DoctorMessages> {
           }).toList();
         });
   }
-  
+  ///Hàm định dạng thời gian
   String _formatTime(DateTime time) {
     final now = DateTime.now();
     if (time.year == now.year && time.month == now.month && time.day == now.day) {
@@ -101,7 +96,7 @@ class _DoctorMessagesState extends State<DoctorMessages> {
     }
     return "${time.day}/${time.month} ${time.hour}:${time.minute.toString().padLeft(2, '0')}";
   }
-
+///Hàm tải và lọc các kênh trò chuyện theo chuyên khoa
   Future<List<Map<String, dynamic>>> _getFilteredChannels() async {
     try {
       // 1. Get doctor specialty
@@ -109,7 +104,7 @@ class _DoctorMessagesState extends State<DoctorMessages> {
           .from('doctor_info')
           .select('specialty')
           .eq('user_id', _myId)
-          .maybeSingle(); // Use maybeSingle in case doctor_info missing
+          .maybeSingle();
       
       final specialty = docInfo?['specialty'] as String?;
       debugPrint('Doctor Specialty: $specialty');
@@ -117,7 +112,6 @@ class _DoctorMessagesState extends State<DoctorMessages> {
       debugPrint('Doctor Specialty: $specialty');
 
       // 2. Fetch ALL channels and filter client-side for robust string matching
-      // This avoids issues with special characters/spaces in Supabase filters
       final response = await _supabase
           .from('channels')
           .select()
@@ -127,17 +121,12 @@ class _DoctorMessagesState extends State<DoctorMessages> {
 
       final filteredChannels = allChannels.where((channel) {
         final name = channel['name'] as String;
-        // Always show General
         if (name == 'General') return true;
         
         if (specialty != null) {
           final sName = name.toLowerCase().trim();
           final sSpecialty = specialty.toLowerCase().trim();
-          
-          // Case-insensitive match
           if (sName == sSpecialty) return true;
-          
-          // Partial match (e.g. Doc has 'Khoa Tim mạch', Channel is 'Tim mạch')
           if (sSpecialty.contains(sName) || sName.contains(sSpecialty)) return true;
         }
         
@@ -153,14 +142,13 @@ class _DoctorMessagesState extends State<DoctorMessages> {
     }
   }
 
-
+///Phương thức xây dựng giao diện màn hình tin nhắn
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       body: Column(
         children: [
-          // Channels Section
           SizedBox(
             height: 100,
             child: FutureBuilder<List<Map<String, dynamic>>>(
@@ -176,7 +164,6 @@ class _DoctorMessagesState extends State<DoctorMessages> {
                   itemCount: channels.length,
                   itemBuilder: (context, index) {
                     final channel = channels[index];
-                    // Translate 'General' to 'Đa khoa' for display
                     String displayName = channel['name'];
                     if (displayName == 'General') displayName = 'Đa khoa';
 
@@ -225,7 +212,6 @@ class _DoctorMessagesState extends State<DoctorMessages> {
             ),
           ),
           const Divider(height: 1),
-          // Conversation List
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
               stream: _conversationsStream,
@@ -233,7 +219,7 @@ class _DoctorMessagesState extends State<DoctorMessages> {
                  if (snapshot.hasError) return Center(child: Text('Lỗi: ${snapshot.error}'));
                  if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
                  
-                 final conversations = snapshot.data!; // No filter
+                 final conversations = snapshot.data!;
 
                  if (conversations.isEmpty) return const Center(child: Text('Chưa có tin nhắn'));
 

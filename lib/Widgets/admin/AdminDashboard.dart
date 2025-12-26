@@ -10,7 +10,7 @@ class AdminDashboard extends StatefulWidget {
   @override
   State<AdminDashboard> createState() => _AdminDashboardState();
 }
-
+///Khởi tạo trạng thái và tải dữ liệu cho trang quản trị
 class _AdminDashboardState extends State<AdminDashboard> {
   final SupabaseClient supabase = Supabase.instance.client;
   
@@ -29,7 +29,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
   
   Future<void> _fetchDoctors() async {
-    // Join with doctor_info table to get specialty (Hint suggests table is doctor_info)
     final res = await supabase.from('users').select('id, name, doctor_info(specialty)').eq('role', 'doctor');
     if (mounted) {
       setState(() {
@@ -37,7 +36,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       });
     }
   }
-
+///Hàm tải dữ liệu thống kê
   Future<void> _fetchStats() async {
     try {
       final patients = await supabase.from('users').count(CountOption.exact).eq('role', 'patient');
@@ -56,27 +55,23 @@ class _AdminDashboardState extends State<AdminDashboard> {
       }
     } catch (e) {
       if (mounted) {
-        // Fallback for counts if .count() is not supported directly in this SDK version or RLS blocks it
-        // Note: .count() requires Head request or similar.
         setState(() => loading = false);
       }
     }
   }
-  
+  ///Hàm hiển thị hộp thoại chọn bác sĩ
   Future<void> _showAssignMeetingDialog() async {
     List<String> selectedDoctorIds = [];
     DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
     TimeOfDay selectedTime = const TimeOfDay(hour: 9, minute: 0);
     final noteController = TextEditingController();
-    
-    // Extract unique specialties
+
     final specialties = _doctors
         .map((d) => (d['doctor_info'] != null && d['doctor_info']['specialty'] != null) 
             ? d['doctor_info']['specialty'] as String 
             : 'General')
         .toSet()
         .toList();
-    
     await showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -90,7 +85,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                     // Specialty Quick Select
                      DropdownButtonFormField<String>(
                       isExpanded: true,
                       decoration: const InputDecoration(labelText: 'Quick Select by Specialty'),
@@ -120,8 +114,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       },
                      ),
                      const SizedBox(height: 10),
-                     
-                     // Multi-Select via ChoiceChips or CheckboxList
+
                      Text("Selected: ${selectedDoctorIds.length} doctors", style: const TextStyle(fontWeight: FontWeight.bold)),
                      const SizedBox(height: 5),
                      Container(
@@ -209,8 +202,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                    
                    try {
                      final currentUserId = supabase.auth.currentUser!.id;
-                     
-                     // Helper function to insert one
+
                      Future<void> insertMeeting(String docId) async {
                         await supabase.from('appointments').insert({
                            'patient_id': currentUserId, 
@@ -221,8 +213,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                            'notes': noteController.text,
                          });
                      }
-                     
-                     // Run parallel
+
                      await Future.wait(selectedDoctorIds.map((id) => insertMeeting(id)));
 
                      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Meeting assigned to ${selectedDoctorIds.length} doctors!")));
@@ -239,7 +230,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       )
     );
   }
-
+///Hàm hiển thị giao diện chính
   @override
   Widget build(BuildContext context) {
     if (loading) {
@@ -282,7 +273,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ),
     );
   }
-
+///Hàm hiển thị thẻ thống kê
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
       decoration: BoxDecoration(

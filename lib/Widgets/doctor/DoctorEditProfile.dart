@@ -12,7 +12,7 @@ class DoctorEditProfile extends StatefulWidget {
   @override
   State<DoctorEditProfile> createState() => _DoctorEditProfileState();
 }
-
+///Hàm hiển thị giao diện chỉnh sửa hồ sơ
 class _DoctorEditProfileState extends State<DoctorEditProfile> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = true;
@@ -36,7 +36,6 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
 
   String? _avatarUrl;
 
-  // Specialty options
   final List<String> _specialtyOptions = [
     'Tim mạch',
     'Da liễu',
@@ -50,7 +49,7 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
     'Tai Mũi Họng',
     'Tiêu hóa - Gan mật',
   ];
-
+///Hàm tải thông tin người dùng
   @override
   void initState() {
     super.initState();
@@ -237,7 +236,7 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
       });
     }
   }
-
+///Hàm hiển thị giao diện chính
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -452,7 +451,7 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
       ),
     );
   }
-
+///Hàm hiển thị tiêu đề phần
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
@@ -463,7 +462,7 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
       ),
     );
   }
-
+///Hàm hiển thị trường văn bản
   Widget _buildTextField(String label, TextEditingController controller, {
     IconData? icon,
     TextInputType keyboardType = TextInputType.text,
@@ -496,7 +495,6 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
       validator: (value) {
-        // Validation for phone number
         if (label == 'Số điện thoại') {
           if (value == null || value.isEmpty) {
             return 'Vui lòng nhập số điện thoại';

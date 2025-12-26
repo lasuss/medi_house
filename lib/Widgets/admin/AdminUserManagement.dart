@@ -7,7 +7,7 @@ class AdminUserManagement extends StatefulWidget {
   @override
   State<AdminUserManagement> createState() => _AdminUserManagementState();
 }
-
+///Hàm hiển thị giao diện quản lý người dùng
 class _AdminUserManagementState extends State<AdminUserManagement> {
   final SupabaseClient supabase = Supabase.instance.client;
   List<Map<String, dynamic>> _users = [];
@@ -20,7 +20,7 @@ class _AdminUserManagementState extends State<AdminUserManagement> {
     super.initState();
     _fetchUsers();
   }
-
+///Hàm tải dữ liệu người dùng
   Future<void> _fetchUsers() async {
     try {
       final response = await supabase
@@ -44,7 +44,7 @@ class _AdminUserManagementState extends State<AdminUserManagement> {
       }
     }
   }
-
+///Hàm lọc người dùng
   void _filterUsers() {
     setState(() {
       if (_searchQuery.isEmpty) {
@@ -59,15 +59,14 @@ class _AdminUserManagementState extends State<AdminUserManagement> {
       }
     });
   }
-
+///Hàm cập nhật thông tin người dùng
   Future<void> _updateUser(String userId, String newRole, String newName) async {
     try {
       await supabase.from('users').update({
         'role': newRole,
         'name': newName
       }).eq('id', userId);
-      
-      // Update local state
+
       final index = _users.indexWhere((u) => u['id'] == userId);
       if (index != -1) {
         setState(() {
@@ -79,18 +78,18 @@ class _AdminUserManagementState extends State<AdminUserManagement> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User updated successfully!')),
+          const SnackBar(content: Text('Người dùng đã cập nhật thành công!')),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating user: $e')),
+          SnackBar(content: Text('Lỗi cập nhật người dùng: $e')),
         );
       }
     }
   }
-
+///Hàm hiển thị hộp thoại chỉnh sửa người dùng
   void _showEditUserDialog(Map<String, dynamic> user) {
     if (user['role'] == 'admin') return; 
 
@@ -102,19 +101,19 @@ class _AdminUserManagementState extends State<AdminUserManagement> {
       builder: (context) => StatefulBuilder(
         builder: (context, setStateDialog) {
           return AlertDialog(
-            title: const Text('Edit User'),
+            title: const Text('Chỉnh sửa người dùng'),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Full Name', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Họ và tên', style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   TextField(
                     controller: nameController,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
-                      hintText: 'Enter full name',
+                      hintText: 'Nhập tên đầy đủ',
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -158,40 +157,40 @@ class _AdminUserManagementState extends State<AdminUserManagement> {
       ),
     );
   }
-
+///Hàm hiển thị hướng dẫn tạo tài khoản
   void _showAddUserInstruction() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add New Account'),
+        title: const Text('Tạo tài khoản mới'),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-             Text('To ensure security, new accounts must be verified via email.'),
+             Text('Để đảm bảo an ninh, tài khoản mới phải được xác minh qua email.'),
              SizedBox(height: 10),
-             Text('1. Log out or open a new browser window.'),
-             Text('2. Use the "Sign Up" page to create a new account.'),
-             Text('3. Return here to verify and promote the account to Doctor or Pharmacy.'),
+             Text('1. Đăng xuất hoặc mở cửa sổ trình duyệt mới.'),
+             Text('2. Sử dụng trang "Đăng ký" để tạo tài khoản mới.'),
+             Text('3. Quay lại đây để xác minh và nâng cấp tài khoản lên Doctor hoặc Pharmacy.'),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Understood'),
+            child: const Text('Đã hiểu'),
           ),
         ],
       ),
     );
   }
-
+///Hàm hiển thị giao diện chính
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF0F4F8),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddUserInstruction,
-        label: const Text('Add Account'),
+        label: const Text('Thêm tài khoản'),
         icon: const Icon(Icons.person_add),
         backgroundColor: Colors.blue,
       ),
@@ -201,7 +200,7 @@ class _AdminUserManagementState extends State<AdminUserManagement> {
             padding: const EdgeInsets.all(16.0),
             child: TextField(
               decoration: InputDecoration(
-                hintText: 'Search by name or email...',
+                hintText: 'Tìm kiếm theo tên hoặc email...',
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 filled: true,
@@ -218,11 +217,10 @@ class _AdminUserManagementState extends State<AdminUserManagement> {
                 ? const Center(child: CircularProgressIndicator())
                 : ListView.builder(
                     itemCount: _filteredUsers.length,
-                    padding: const EdgeInsets.only(left: 16, right: 16, bottom: 80), // extra padding for FAB
+                    padding: const EdgeInsets.only(left: 16, right: 16, bottom: 80),
                     itemBuilder: (context, index) {
                       final user = _filteredUsers[index];
                       final role = user['role'] ?? 'patient';
-                      // Fallback logic for display name
                       String displayName = user['name'] ?? '';
                       if (displayName.trim().isEmpty) {
                          String email = user['email'] ?? '';

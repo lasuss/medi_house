@@ -17,7 +17,7 @@ class ChannelChatScreen extends StatefulWidget {
   @override
   State<ChannelChatScreen> createState() => _ChannelChatScreenState();
 }
-
+///Hàm hiển thị giao diện chat
 class _ChannelChatScreenState extends State<ChannelChatScreen> {
   final _supabase = Supabase.instance.client;
   final TextEditingController _textController = TextEditingController();
@@ -25,7 +25,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   
   late final String _myId;
   Stream<List<Message>>? _messagesStream;
-  Map<String, String> _userNames = {}; // Cache for sender names
+  Map<String, String> _userNames = {};
 
   @override
   void initState() {
@@ -33,7 +33,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     _myId = _supabase.auth.currentUser!.id;
     _setupMessageStream();
   }
-
+///Hàm thiết lập luồng tin nhắn
   void _setupMessageStream() {
     _messagesStream = _supabase
         .from('messages')
@@ -48,7 +48,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           return messages;
         });
   }
-
+///Hàm tải tên người gửi tin nhắn
   Future<void> _fetchSenders(List<Message> messages) async {
     final unknownIds = messages
         .map((m) => m.senderId)
@@ -84,10 +84,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     try {
       await _supabase.from('messages').insert({
         'sender_id': _myId,
-        'channel_id': widget.channelId, // Send to channel
+        'channel_id': widget.channelId,
         'content': text,
       });
-      // Scroll to bottom after sending
       Future.delayed(const Duration(milliseconds: 100), () {
         if (_scrollController.hasClients) {
           _scrollController.animateTo(
@@ -110,7 +109,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     if (userId == _myId) return 'Bạn';
     return _userNames[userId] ?? 'Người dùng';
   }
-
+///Hàm hiển thị giao diện chính
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -229,7 +228,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
       ),
     );
   }
-
+///Hàm hiển thị khung nhập tin nhắn
   Widget _buildMessageComposer() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),

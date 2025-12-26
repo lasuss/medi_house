@@ -1,10 +1,8 @@
-//have access on Doctor Bottom Navigation
-
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
-
+///Hàm hiển thị thông báo
 class DoctorNotification extends StatefulWidget {
   const DoctorNotification({Key? key, this.title}) : super(key: key);
   final String? title;
@@ -12,7 +10,7 @@ class DoctorNotification extends StatefulWidget {
   @override
   State<DoctorNotification> createState() => _DoctorNotificationState();
 }
-
+///Khởi tạo Trạng thái và Luồng dữ liệu cho Thông báo
 class _DoctorNotificationState extends State<DoctorNotification> {
   final _supabase = Supabase.instance.client;
   String _selectedFilter = 'Tất cả';
@@ -40,7 +38,7 @@ class _DoctorNotificationState extends State<DoctorNotification> {
           .eq('is_read', false);
     }
   }
-
+///Hàm lọc thông báo dựa trên chọn lọc
   bool _filterNotification(Map<String, dynamic> notif) {
     if (_selectedFilter == 'Tất cả') return true;
     final type = notif['type'] ?? 'info';
@@ -51,7 +49,7 @@ class _DoctorNotificationState extends State<DoctorNotification> {
     
     return true;
   }
-
+///Hàm hiển thị thời gian
   String _timeAgo(String? dateString) {
     if (dateString == null) return '';
     final date = DateTime.parse(dateString).toLocal();
@@ -59,17 +57,17 @@ class _DoctorNotificationState extends State<DoctorNotification> {
     final difference = now.difference(date);
 
     if (difference.inDays > 365) {
-      return '${(difference.inDays / 365).floor()}y ago';
+      return '${(difference.inDays / 365).floor()}năm trước';
     } else if (difference.inDays > 30) {
-      return '${(difference.inDays / 30).floor()}mo ago';
+      return '${(difference.inDays / 30).floor()}tháng trước';
     } else if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
+      return '${difference.inDays}ngày trước';
     } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
+      return '${difference.inHours}giờ trước';
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
+      return '${difference.inMinutes}phút trước';
     } else {
-      return 'Just now';
+      return 'Ngay bây giờ';
     }
   }
   
@@ -77,7 +75,7 @@ class _DoctorNotificationState extends State<DoctorNotification> {
     switch (type) {
       case 'alert': return FontAwesomeIcons.circleExclamation;
       case 'appointment': return FontAwesomeIcons.calendarCheck;
-      case 'message': return FontAwesomeIcons.solidComment; // Message specific
+      case 'message': return FontAwesomeIcons.solidComment;
       case 'info': return FontAwesomeIcons.circleInfo;
       case 'system': return FontAwesomeIcons.gear;
       case 'prescription': return FontAwesomeIcons.prescription;
@@ -95,15 +93,14 @@ class _DoctorNotificationState extends State<DoctorNotification> {
       default: return Colors.indigo;
     }
   }
-
+///Hàm xây dựng giao diện
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50], // Light grey bg
+      backgroundColor: Colors.grey[50],
       body: SafeArea(
         child: Column(
           children: [
-            // Header Section
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               color: Colors.white,
@@ -124,7 +121,6 @@ class _DoctorNotificationState extends State<DoctorNotification> {
                     ],
                    ),
                   const SizedBox(height: 12),
-                  // Filter Chips
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
@@ -162,7 +158,7 @@ class _DoctorNotificationState extends State<DoctorNotification> {
               ),
             ),
             
-            // Notification List
+            ///Danh sách thông báo
             Expanded(
               child: StreamBuilder<List<Map<String, dynamic>>>(
                 stream: _getNotificationsStream(),
@@ -216,9 +212,8 @@ class _DoctorNotificationState extends State<DoctorNotification> {
                           borderRadius: BorderRadius.circular(12),
                           onTap: () {
                             _markAsRead(notif['id']);
-                            // Navigation logic
                             if (type == 'appointment') {
-                               context.go('/doctor/schedule'); // Or logic to switch tab
+                               context.go('/doctor/schedule');
                             } else if (type == 'message') {
                                context.go('/doctor/messages');
                             }

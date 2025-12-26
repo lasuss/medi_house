@@ -12,7 +12,7 @@ class DoctorHelpCenter extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Trợ giúp & Hỗ trợ'),
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black, // Dark text/icons for white app bar
+        foregroundColor: Colors.black,
         elevation: 0,
       ),
       backgroundColor: Colors.white,
@@ -117,11 +117,11 @@ class DoctorHelpCenter extends StatelessWidget {
       ),
     );
   }
-
+///Hàm hiển thị thông tin
   Widget _buildExpansionTile({required String title, required List<Widget> children}) {
     return Card(
       elevation: 0,
-      color: Colors.grey[50], // Light grey background
+      color: Colors.grey[50],
       margin: const EdgeInsets.only(bottom: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: ExpansionTile(

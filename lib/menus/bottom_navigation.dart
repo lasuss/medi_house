@@ -15,11 +15,7 @@ class NavigationItemConfig {
     required this.route,
   });
 }
-
-/// Cấu hình các mục điều hướng cho từng vai trò người dùng.
-///
-/// `AppShell` sẽ sử dụng Map này để lấy đúng danh sách các mục cần hiển thị
-/// dựa trên vai trò của người dùng hiện tại.
+///Hệ thống điều hướng dưới chân trang theo vai trò người dùng
 final Map<UserRole, List<NavigationItemConfig>> navigationConfigs = {
   UserRole.patient: [
     const NavigationItemConfig(icon: FontAwesomeIcons.houseMedical, label: 'Trang chủ', route: '/patient/dashboard'),
@@ -50,23 +46,21 @@ final Map<UserRole, List<NavigationItemConfig>> navigationConfigs = {
   ],
 };
 
-
+///Widget thanh điều hướng dưới cùng (Bottom Navigation Widget)
 class BottomNavigation extends StatelessWidget {
   final int currentIndex;
-  final List<NavigationItemConfig> navItems; // Nhận vào một danh sách các mục
+  final List<NavigationItemConfig> navItems;
 
   const BottomNavigation({
     Key? key,
     required this.currentIndex,
-    required this.navItems, // Bắt buộc phải có
+    required this.navItems,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // BottomNavigationBar yêu cầu phải có ít nhất 2 mục.
-    // Nếu có ít hơn 2 mục, ta sẽ không hiển thị thanh điều hướng.
     if (navItems.length < 2) {
-      return const SizedBox.shrink(); // Trả về một widget trống
+      return const SizedBox.shrink();
     }
 
     return BottomNavigationBar(
@@ -76,10 +70,9 @@ class BottomNavigation extends StatelessWidget {
       selectedItemColor: Colors.blueAccent,
       unselectedItemColor: Colors.grey[400],
       onTap: (index) {
-        // Điều hướng đến route của mục được chọn
         context.go(navItems[index].route);
       },
-      // Tạo các mục một cách linh hoạt từ danh sách được cung cấp
+
       items: navItems.map((item) {
         return BottomNavigationBarItem(
           icon: FaIcon(item.icon, size: 20),
