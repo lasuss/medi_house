@@ -353,7 +353,7 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Record'),
+        title: const Text('Chỉnh Sửa Bệnh Án'),
         backgroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Color(0xFF2D3748)),
         elevation: 0,
@@ -414,11 +414,11 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
             const SizedBox(height: 20),
 
             // ===== Symptoms & Diagnosis =====
-            _buildTextField(symptomsController, 'Symptoms'),
+            _buildTextField(symptomsController, 'Triệu Chứng'),
             const SizedBox(height: 16),
-            _buildTextField(diagnosisController, 'Diagnosis'),
+            _buildTextField(diagnosisController, 'Chẩn Đoán'),
             const SizedBox(height: 16),
-            _buildTextField(doctorNoteController, 'Doctor Notes / General Instructions'),
+            _buildTextField(doctorNoteController, 'Ghi Chú & Hướng Dẫn Của Bác Sĩ'),
             const SizedBox(height: 20),
 
             // ===== Prescription Section (NEW) =====
@@ -426,13 +426,13 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Prescription',
+                  'Đơn Thuốc',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF2D3748)),
                 ),
                 TextButton.icon(
                     onPressed: _showAddMedicineDialog,
                     icon: const Icon(Icons.add_circle, color: Colors.blue),
-                    label: const Text('Add Medicine', style: TextStyle(color: Colors.blue)),
+                    label: const Text('Thêm Thuốc', style: TextStyle(color: Colors.blue)),
                 )
               ],
             ),
@@ -479,7 +479,7 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
 
             // ===== Status =====
             const Text(
-              'Status',
+              'Trạng Thái Bệnh Án',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 8),
@@ -507,13 +507,14 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
                     onPressed: isSaving ? null : _saveRecord,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3182CE),
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
                     child: isSaving
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('Save Record', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        : const Text('Lưu Bệnh Án', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -526,7 +527,7 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
                           borderRadius: BorderRadius.circular(12)),
                       side: BorderSide(color: Colors.grey[400]!),
                     ),
-                    child: Text('Cancel', style: TextStyle(color: Colors.grey[700], fontSize: 16)),
+                    child: Text('Hủy', style: TextStyle(color: Colors.grey[700], fontSize: 16)),
                   ),
                 ),
               ],

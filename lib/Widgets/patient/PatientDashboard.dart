@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 
+// Widget chính hiển thị dashboard của bệnh nhân
 class PatientDashboard extends StatefulWidget {
   const PatientDashboard({Key? key, this.title}) : super(key: key);
   final String? title;
@@ -10,10 +11,14 @@ class PatientDashboard extends StatefulWidget {
   State<PatientDashboard> createState() => _PatientDashboardState();
 }
 
+// Trạng thái quản lý dữ liệu và giao diện dashboard bệnh nhân
 class _PatientDashboardState extends State<PatientDashboard> {
+  // Khởi tạo client Supabase
   final SupabaseClient supabase = Supabase.instance.client;
+  // Tên bệnh nhân và url avatar
   String _patientName = 'Bệnh nhân';
   String? _avatarUrl;
+  // Danh sách hồ sơ khám bệnh
   List<Map<String, dynamic>> _records = [];
   List<Map<String, dynamic>> _filteredRecords = []; // Added
   bool _isLoading = true;
@@ -29,21 +34,23 @@ class _PatientDashboardState extends State<PatientDashboard> {
 
 
   @override
+  // Khởi tạo trạng thái: lấy dữ liệu khi widget được tạo
   void initState() {
     super.initState();
     _fetchData();
   }
 
+  // Lấy dữ liệu dashboard: thông tin người dùng và danh sách hồ sơ khám
   Future<void> _fetchData() async {
     try {
       final userId = supabase.auth.currentUser!.id;
 
-      // 1. Fetch User Name & Avatar
+      // Lấy tên và avatar của người dùng hiện tại
       final userRes = await supabase.from('users').select('name, avatar_url').eq('id', userId).single();
       _patientName = userRes['name'] ?? 'Bệnh nhân';
       _avatarUrl = userRes['avatar_url'];
 
-      // 2. Fetch Medical Records (Results)
+      // Lấy danh sách hồ sơ khám (records) kèm thông tin bác sĩ và lịch hẹn
       final recordsRes = await supabase
           .from('records')
           .select('*, doctor:doctor_id(id, name), appointments(*)')
@@ -105,9 +112,10 @@ class _PatientDashboardState extends State<PatientDashboard> {
 
 
   @override
+  // Xây dựng giao diện chính của dashboard
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA), // Light grey background
+      backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
         child: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -127,6 +135,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
               ),
             ),
       ),
+      // Nút nổi để thêm hồ sơ khám mới
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.go('/patient/records/add'),
         backgroundColor: Colors.blue,
@@ -135,6 +144,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
     );
   }
 
+  // Xây dựng phần header chào mừng với tên và avatar bệnh nhân
   Widget _buildHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -170,18 +180,19 @@ class _PatientDashboardState extends State<PatientDashboard> {
           child: _avatarUrl != null && _avatarUrl!.isNotEmpty
               ? null
               : Text(
-                  _patientName.isNotEmpty ? _patientName[0].toUpperCase() : '?',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[800],
-                  ),
-                ),
+            _patientName.isNotEmpty ? _patientName[0].toUpperCase() : '?',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.blue[800],
+            ),
+          ),
         ),
       ],
     );
   }
 
+  // Xây dựng tiêu đề phần nội dung
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
@@ -260,6 +271,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
       );
     }
 
+    // Danh sách các thẻ hồ sơ khám (có thể click để xem chi tiết)
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -267,53 +279,62 @@ class _PatientDashboardState extends State<PatientDashboard> {
       itemBuilder: (context, index) {
         final record = _filteredRecords[index]; // Using filtered list
         final created = DateTime.parse(record['created_at']).toLocal();
-        final doctorMap = record['doctor']; // Can be null or Map
+        final doctorMap = record['doctor'];
         String doctorName = 'Bác sĩ';
         if (doctorMap != null && doctorMap is Map) {
-             doctorName = doctorMap['name'] ?? 'Bác sĩ';
+          doctorName = doctorMap['name'] ?? 'Bác sĩ';
         }
 
-        // Try to get appointment time
+        // Xử lý hiển thị thời gian hẹn từ appointments
         String? timeDisplay;
         final appointments = record['appointments'];
         if (appointments != null && (appointments is List) && appointments.isNotEmpty) {
-           final appt = appointments[0];
-           if (appt['date'] != null) {
-              final date = DateTime.parse(appt['date']).toLocal();
-              final dateStr = DateFormat('dd/MM/yyyy').format(date);
-              final timeSlot = appt['time_slot'] ?? '';
-              timeDisplay = timeSlot.isNotEmpty ? "$timeSlot - $dateStr" : DateFormat('dd/MM/yyyy HH:mm').format(date);
-           }
+          final appt = appointments[0];
+          if (appt['date'] != null) {
+            final date = DateTime.parse(appt['date']).toLocal();
+            final dateStr = DateFormat('dd/MM/yyyy').format(date);
+            final timeSlot = appt['time_slot'] ?? '';
+            timeDisplay = timeSlot.isNotEmpty ? "$timeSlot - $dateStr" : DateFormat('dd/MM/yyyy HH:mm').format(date);
+          }
         }
 
-        // Determine type and details based on the record type
-        String typeDisplay;
-        IconData icon;
-        Color iconColor;
+        // Xác định loại phiếu khám, icon và màu sắc tương ứng
+        String typeDisplay = 'Phiếu khám';
+        IconData icon = Icons.medical_services_outlined;
+        Color iconColor = Colors.blue;
         String? doctorDisplay = doctorName;
-        
-        String recordType = _getRecordType(record);
-        
-        switch (recordType) {
-          case 'Kết quả xét nghiệm':
+
+        if (appointments != null && (appointments is List) && appointments.isNotEmpty) {
+          final apptType = appointments[0]['type'];
+          if (apptType == 'xet_nghiem') {
+            typeDisplay = 'Phiếu Xét Nghiệm';
+            icon = Icons.biotech;
+            iconColor = Colors.purple;
+            doctorDisplay = null;
+          } else if (apptType == 'dich_vu') {
+            typeDisplay = 'Khám Dịch Vụ';
+            icon = Icons.medical_services_outlined;
+            iconColor = Colors.orange;
+          } else if (apptType == 'bac_si') {
+            typeDisplay = 'Khám Theo Bác Sĩ';
+            icon = Icons.person_search;
+            iconColor = Colors.blue;
+          }
+        } else {
+          // Dự đoán loại dựa vào symptoms nếu không có appointment
+          final symptoms = (record['symptoms'] as String? ?? '').toLowerCase();
+          if (symptoms.contains('xét nghiệm')) {
             typeDisplay = 'Kết quả xét nghiệm';
             icon = Icons.biotech;
             iconColor = Colors.purple;
-            doctorDisplay = null; // Hide doctor for lab tests
-            break;
-          case 'Đơn thuốc':
+          } else if (symptoms.contains('đơn thuốc')) {
             typeDisplay = 'Đơn thuốc';
             icon = Icons.medication_outlined;
             iconColor = Colors.green;
-            break;
-          case 'Kết quả khám bệnh':
-          default:
-            typeDisplay = 'Kết quả khám bệnh';
-            icon = Icons.medical_services_outlined;
-            iconColor = Colors.blue;
+          }
         }
 
-
+        // Thẻ hiển thị một hồ sơ khám cụ thể
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
@@ -332,7 +353,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
               onTap: () {
-                 context.push('/patient/records/${record['id']}');
+                context.push('/patient/records/${record['id']}');
               },
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -362,6 +383,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                                   color: Color(0xFF2D3748),
                                 ),
                               ),
+                              // Hiển thị badge "Hoàn thành" nếu trạng thái Completed
                               if (record['status'] == 'Completed') ...[
                                 const SizedBox(width: 8),
                                 Container(
@@ -378,9 +400,9 @@ class _PatientDashboardState extends State<PatientDashboard> {
                                       Text(
                                         "Hoàn thành",
                                         style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.green[700]
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.green[700]
                                         ),
                                       ),
                                     ],
@@ -390,6 +412,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                             ],
                           ),
                           const SizedBox(height: 4),
+                          // Hiển thị tên bác sĩ nếu có
                           if (doctorDisplay != null) ...[
                             Text(
                               doctorDisplay,
@@ -400,6 +423,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                             ),
                             const SizedBox(height: 4),
                           ],
+                          // Hiển thị thông tin ngày giờ hẹn
                           if (timeDisplay != null)
                             Padding(
                               padding: const EdgeInsets.only(bottom: 2.0),
@@ -410,25 +434,26 @@ class _PatientDashboardState extends State<PatientDashboard> {
                                   Text(
                                     "Hẹn: $timeDisplay",
                                     style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.blue[700],
-                                      fontWeight: FontWeight.w500
+                                        fontSize: 12,
+                                        color: Colors.blue[700],
+                                        fontWeight: FontWeight.w500
                                     ),
                                   ),
                                 ],
                               ),
                             ),
 
+                          // Hiển thị thời gian cập nhật cuối cùng
                           Row(
                             children: [
                               Icon(Icons.history, size: 12, color: Colors.grey[500]),
                               const SizedBox(width: 4),
                               Text(
-                                 "Cập nhật: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(record['updated_at']).toLocal())}",
-                                 style: TextStyle(
-                                   fontSize: 12,
-                                   color: Colors.grey[500],
-                                 ),
+                                "Cập nhật: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(record['updated_at']).toLocal())}",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[500],
+                                ),
                               ),
                             ],
                           ),

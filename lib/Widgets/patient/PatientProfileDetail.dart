@@ -1,13 +1,14 @@
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:barcode_widget/barcode_widget.dart';
 
+// Widget hiển thị chi tiết hồ sơ bệnh nhân
 class PatientProfileDetail extends StatelessWidget {
   final Map<String, dynamic> profile;
 
   const PatientProfileDetail({super.key, required this.profile});
 
+  // Định dạng ngày từ chuỗi ISO sang định dạng dd/MM/yyyy
   String _formatDate(String isoDate) {
     try {
       final date = DateTime.parse(isoDate);
@@ -18,8 +19,9 @@ class PatientProfileDetail extends StatelessWidget {
   }
 
   @override
+  // Xây dựng giao diện chi tiết hồ sơ bệnh nhân
   Widget build(BuildContext context) {
-    // Generate a pseudo-patient ID if not present (Mocking the format MP-YYMMDD...)
+    // Tạo mã bệnh nhân giả lập theo định dạng MP-YYMMDD... (dùng cho QR code)
     final String patientCode = "MP-${DateFormat('yyMMdd').format(DateTime.now())}${profile['id'].toString().substring(0, 4)}".toUpperCase();
 
     return Scaffold(
@@ -36,12 +38,13 @@ class PatientProfileDetail extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Tiêu đề phần thông tin bệnh nhân
             const Text(
               "THÔNG TIN BỆNH NHÂN",
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0D47A1), // Dark Blue
+                color: Color(0xFF0D47A1),
               ),
             ),
             const SizedBox(height: 20),
@@ -64,12 +67,13 @@ class PatientProfileDetail extends StatelessWidget {
             _buildRow("Email", profile['email'] ?? "Chưa cập nhật"),
             _buildDivider(),
             _buildRow("Địa chỉ (ghi trên CCCD)", profile['address_street'] ?? "Chưa cập nhật", isAddress: true),
-            
+
             const SizedBox(height: 40),
+            // Phần mã QR bệnh nhân
             Center(
               child: Column(
                 children: [
-                   BarcodeWidget(
+                  BarcodeWidget(
                     barcode: Barcode.qrCode(),
                     data: patientCode,
                     width: 200,
@@ -88,6 +92,7 @@ class PatientProfileDetail extends StatelessWidget {
     );
   }
 
+  // Widget một dòng thông tin (nhãn bên trái, giá trị bên phải)
   Widget _buildRow(String label, String value, {bool isAddress = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -108,13 +113,9 @@ class PatientProfileDetail extends StatelessWidget {
             flex: 6,
             child: Text(
               value,
-              textAlign: isAddress ? TextAlign.right : TextAlign.right, // Image aligns values to right? Or Left aligned in second column? 
-              // Looking at image: Values are Left aligned within their column, but the column starts at a specific point.
-              // Actually, looking closely, "Họ và tên" is Left, "NGUYỄN LÊ..." is Right aligned or just starts at center.
-              // Let's use TextAlign.right for cleanliness or try to mimic the spacing.
-              // The image shows Label on left, Value on right (or center-right).
+              textAlign: isAddress ? TextAlign.right : TextAlign.right,
               style: TextStyle(
-                color: const Color(0xFF263238), // Dark Blue Grey
+                color: const Color(0xFF263238),
                 fontSize: 15,
                 fontWeight: isAddress ? FontWeight.normal : FontWeight.w500,
               ),
@@ -125,6 +126,7 @@ class PatientProfileDetail extends StatelessWidget {
     );
   }
 
+  // Đường phân cách giữa các dòng thông tin
   Widget _buildDivider() {
     return Divider(color: Colors.grey[200], thickness: 1, height: 1);
   }

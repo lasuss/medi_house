@@ -1,8 +1,8 @@
-//show QR code to scan by Doctor
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:qr_flutter/qr_flutter.dart'; // Make sure to add qr_flutter to your pubspec.yaml
+import 'package:qr_flutter/qr_flutter.dart';
 
+// Widget chính hiển thị mã QR y tế để bác sĩ hoặc dược sĩ quét
 class PatientShowQR extends StatefulWidget {
   const PatientShowQR({Key? key, this.title}) : super(key: key);
   final String? title;
@@ -10,16 +10,14 @@ class PatientShowQR extends StatefulWidget {
   State<PatientShowQR> createState() => _PatientShowQRState();
 }
 
+// Trạng thái quản lý dữ liệu và mã QR hiển thị
 class _PatientShowQRState extends State<PatientShowQR> {
-  // --- Placeholder Data ---
-  // In a real app, this data should come from your state management (e.g., a Provider or Bloc)
-  // which holds the logged-in user's information.
-  String _qrData = 'MH123456789'; // The initial data for the QR code (e.g., user ID)
+  // Dữ liệu placeholder cho mã QR, tên bệnh nhân và mã hồ sơ (thực tế lấy từ state management)
+  String _qrData = 'MH123456789';
   final String _patientName = 'John Appleseed';
   final String _recordId = 'MH123456789';
 
-  /// This function simulates refreshing the QR code.
-  /// In a real app, this would generate a new secure, temporary token.
+  // Làm mới mã QR bằng cách thêm timestamp để tạo mã tạm thời mới
   void _refreshCode() {
     setState(() {
       _qrData = 'MH123456789-${DateTime.now().millisecondsSinceEpoch}';
@@ -34,16 +32,19 @@ class _PatientShowQRState extends State<PatientShowQR> {
   }
 
   @override
+  // Xây dựng giao diện hiển thị mã QR và thông tin bệnh nhân
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A192F),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0A192F),
         elevation: 0,
+        // Nút quay lại
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => GoRouter.of(context).pop(),
         ),
+        // Tiêu đề màn hình
         title: const Text(
           'Mã Y Tế Của Bạn',
           style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w500),
@@ -55,6 +56,7 @@ class _PatientShowQRState extends State<PatientShowQR> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Phần hiển thị tên bệnh nhân và mã hồ sơ
             Container(
               padding: const EdgeInsets.symmetric(vertical: 16.0),
               decoration: BoxDecoration(
@@ -83,10 +85,11 @@ class _PatientShowQRState extends State<PatientShowQR> {
               ),
             ),
             const SizedBox(height: 40),
+            // Phần hiển thị mã QR trong khung tròn
             Container(
               padding: const EdgeInsets.all(30),
               decoration: BoxDecoration(
-                color: const Color(0xFF64FFDA).withOpacity(0.2), // Light teal accent
+                color: const Color(0xFF64FFDA).withOpacity(0.2),
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Container(
@@ -107,6 +110,7 @@ class _PatientShowQRState extends State<PatientShowQR> {
               ),
             ),
             const SizedBox(height: 30),
+            // Hướng dẫn sử dụng mã QR
             const Text(
               'Vui lòng xuất trình mã này cho bác sĩ hoặc dược sĩ để truy cập hồ sơ của bạn.',
               textAlign: TextAlign.center,
@@ -125,6 +129,7 @@ class _PatientShowQRState extends State<PatientShowQR> {
               ),
             ),
             const Spacer(),
+            // Nút làm mới mã QR
             ElevatedButton.icon(
               onPressed: _refreshCode,
               icon: const Icon(Icons.refresh, color: Colors.white),

@@ -5,6 +5,7 @@ import 'package:medi_house/Widgets/patient/PatientScanNationalID.dart';
 import 'package:medi_house/helpers/UserManager.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+// Widget chính cho màn hình chỉnh sửa hồ sơ bệnh nhân
 class PatientEditProfile extends StatefulWidget {
   const PatientEditProfile({Key? key}) : super(key: key);
 
@@ -12,26 +13,30 @@ class PatientEditProfile extends StatefulWidget {
   State<PatientEditProfile> createState() => _PatientEditProfileState();
 }
 
+// Trạng thái quản lý việc chỉnh sửa thông tin cá nhân bệnh nhân
 class _PatientEditProfileState extends State<PatientEditProfile> {
+  // Key để validate form và trạng thái loading
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = true;
-  
-  // Controllers
+
+  // Các controller cho ô nhập liệu
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _idController = TextEditingController();
   final TextEditingController _dobController = TextEditingController();
-  final TextEditingController _genderController = TextEditingController(); // Reverted to controller
+  final TextEditingController _genderController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   String? _avatarUrl;
 
   @override
+  // Khởi tạo trạng thái: lấy dữ liệu người dùng khi mở màn hình
   void initState() {
     super.initState();
     _fetchUserData();
   }
 
+  // Lấy thông tin người dùng hiện tại từ bảng users trong Supabase
   Future<void> _fetchUserData() async {
     try {
       final userId = UserManager.instance.supabaseUser?.id;
@@ -53,7 +58,7 @@ class _PatientEditProfileState extends State<PatientEditProfile> {
           _addressController.text = data['address'] ?? '';
           _idController.text = data['national_id'] ?? '';
           _dobController.text = data['dob'] ?? '';
-          _genderController.text = data['gender'] ?? ''; // Direct assignment
+          _genderController.text = data['gender'] ?? '';
           _avatarUrl = data['avatar_url'] ?? '';
           _emailController.text = data['email'] ?? '';
           _isLoading = false;
@@ -71,6 +76,7 @@ class _PatientEditProfileState extends State<PatientEditProfile> {
   }
 
   @override
+  // Giải phóng các controller khi widget bị hủy
   void dispose() {
     _nameController.dispose();
     _idController.dispose();
@@ -82,6 +88,7 @@ class _PatientEditProfileState extends State<PatientEditProfile> {
     super.dispose();
   }
 
+  // Tải lên avatar mới từ thư viện ảnh và lưu vào Supabase Storage
   Future<void> _uploadAvatar() async {
     final imagePicker = ImagePicker();
     final imageFile = await imagePicker.pickImage(
@@ -98,34 +105,35 @@ class _PatientEditProfileState extends State<PatientEditProfile> {
     try {
       final bytes = await imageFile.readAsBytes();
       final fileExt = imageFile.path.split('.').last;
-      
+
       final userId = UserManager.instance.supabaseUser?.id;
       if (userId == null) return;
 
       final fileName = '$userId/avatar.$fileExt';
-      
+
       await Supabase.instance.client.storage.from('avatars').uploadBinary(
-            fileName,
-            bytes,
-            fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
-          );
+        fileName,
+        bytes,
+        fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+      );
       final imageUrlResponse = Supabase.instance.client.storage.from('avatars').getPublicUrl(fileName);
-      
+
       setState(() {
         _avatarUrl = imageUrlResponse;
         _isLoading = false;
       });
-      
+
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text('Lỗi tải lên avatar: $e')),
+          SnackBar(content: Text('Lỗi tải lên avatar: $e')),
         );
         setState(() => _isLoading = false);
       }
     }
   }
 
+  // Trả về ImageProvider cho avatar (NetworkImage nếu có URL hợp lệ)
   ImageProvider? _getAvatarImage() {
     if (_avatarUrl != null && _avatarUrl!.isNotEmpty) {
       if (_avatarUrl!.startsWith('http')) {
@@ -135,18 +143,18 @@ class _PatientEditProfileState extends State<PatientEditProfile> {
     return null;
   }
 
+  // Mở màn hình quét CCCD và reload dữ liệu nếu quét thành công
   Future<void> _handleScanCCCD() async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const PatientScanNationalID()),
     );
 
-    // If result is true, it means scan was successful and data saved to DB
     if (result == true) {
-      await _fetchUserData(); // Reload data from DB
-      
+      await _fetchUserData();
+
       if (mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Đã cập nhật thông tin từ CCCD!')),
         );
       }
@@ -154,6 +162,7 @@ class _PatientEditProfileState extends State<PatientEditProfile> {
   }
 
   @override
+  // Xây dựng giao diện chỉnh sửa hồ sơ
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
@@ -170,6 +179,7 @@ class _PatientEditProfileState extends State<PatientEditProfile> {
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF2D3748)),
+        // Nút quét CCCD trên AppBar
         actions: [
           IconButton(
             onPressed: _handleScanCCCD,
@@ -186,7 +196,7 @@ class _PatientEditProfileState extends State<PatientEditProfile> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar section
+              // Phần hiển thị và thay đổi avatar
               Center(
                 child: GestureDetector(
                   onTap: _uploadAvatar,
@@ -220,8 +230,8 @@ class _PatientEditProfileState extends State<PatientEditProfile> {
                 ),
               ),
               const SizedBox(height: 24),
-              
-              // Helper text for scanning
+
+              // Thông báo về các trường chỉ đọc (lấy từ CCCD)
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -243,7 +253,8 @@ class _PatientEditProfileState extends State<PatientEditProfile> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
+              // Tiêu đề phần thông tin cá nhân
               _buildSectionTitle('Thông tin cá nhân'),
               const SizedBox(height: 12),
               _buildTextField('Họ và tên', _nameController, icon: Icons.person_outline, readOnly: true),
@@ -253,21 +264,22 @@ class _PatientEditProfileState extends State<PatientEditProfile> {
               _buildTextField('Địa chỉ', _addressController, icon: Icons.location_on_outlined, maxLines: 2, readOnly: true),
 
               const SizedBox(height: 24),
+              // Tiêu đề phần thông tin định danh
               _buildSectionTitle('Thông tin định danh'),
               const SizedBox(height: 12),
-              
+
               _buildTextField('Số CCCD', _idController, icon: Icons.credit_card, readOnly: true),
               const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(child: _buildTextField('Ngày sinh', _dobController, icon: Icons.calendar_today, readOnly: true)),
                   const SizedBox(width: 16),
-                   // Gender is now a read-only text file
                   Expanded(child: _buildTextField('Giới tính', _genderController, icon: Icons.people_outline, readOnly: true)),
                 ],
               ),
 
               const SizedBox(height: 32),
+              // Nút lưu thay đổi
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -278,31 +290,30 @@ class _PatientEditProfileState extends State<PatientEditProfile> {
                       try {
                         final userId = UserManager.instance.supabaseUser?.id;
                         if (userId != null) {
-                           await Supabase.instance.client.from('users').update({
-                             // All fields are sent, though some are read-only in UI
-                             'name': _nameController.text,
-                             'phone': _phoneController.text,
-                             'address': _addressController.text,
-                             'national_id': _idController.text,
-                             'dob': _dobController.text,
-                             'gender': _genderController.text, // Use controller text
-                             'avatar_url': _avatarUrl,
-                           }).eq('id', userId);
-                           
-                           if (mounted) {
-                             ScaffoldMessenger.of(context).showSnackBar(
-                               const SnackBar(content: Text('Đã cập nhật thông tin thành công!')),
-                             );
-                             Navigator.of(context).pop();
-                           }
+                          await Supabase.instance.client.from('users').update({
+                            'name': _nameController.text,
+                            'phone': _phoneController.text,
+                            'address': _addressController.text,
+                            'national_id': _idController.text,
+                            'dob': _dobController.text,
+                            'gender': _genderController.text,
+                            'avatar_url': _avatarUrl,
+                          }).eq('id', userId);
+
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Đã cập nhật thông tin thành công!')),
+                            );
+                            Navigator.of(context).pop();
+                          }
                         }
                       } catch (e) {
-                         if (mounted) {
-                           ScaffoldMessenger.of(context).showSnackBar(
-                             SnackBar(content: Text('Lỗi khi lưu: $e')),
-                           );
-                           setState(() => _isLoading = false);
-                         }
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Lỗi khi lưu: $e')),
+                          );
+                          setState(() => _isLoading = false);
+                        }
                       }
                     }
                   },
@@ -325,6 +336,7 @@ class _PatientEditProfileState extends State<PatientEditProfile> {
     );
   }
 
+  // Widget tiêu đề phần (Thông tin cá nhân / Thông tin định danh)
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
@@ -336,8 +348,9 @@ class _PatientEditProfileState extends State<PatientEditProfile> {
     );
   }
 
+  // Widget ô nhập liệu chung với các tùy chọn tùy chỉnh
   Widget _buildTextField(String label, TextEditingController controller, {
-    IconData? icon, 
+    IconData? icon,
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
     bool readOnly = false,
@@ -347,7 +360,7 @@ class _PatientEditProfileState extends State<PatientEditProfile> {
       keyboardType: keyboardType,
       maxLines: maxLines,
       readOnly: readOnly,
-      style: const TextStyle(fontSize: 12), // Sửa font size ở chỗ này
+      style: const TextStyle(fontSize: 12),
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: icon != null ? Icon(icon, color: Colors.grey[500], size: 20) : null,
@@ -370,7 +383,6 @@ class _PatientEditProfileState extends State<PatientEditProfile> {
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
-          // Optional
         }
         return null;
       },

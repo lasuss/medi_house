@@ -5,6 +5,7 @@ import 'package:medi_house/Widgets/ChangePassword.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:medi_house/helpers/UserManager.dart';
 
+// Widget chính hiển thị màn hình hồ sơ cá nhân của bệnh nhân
 class PatientProfile extends StatefulWidget {
   const PatientProfile({Key? key, this.title}) : super(key: key);
   final String? title;
@@ -13,33 +14,38 @@ class PatientProfile extends StatefulWidget {
   State<PatientProfile> createState() => _PatientProfileState();
 }
 
+// Trạng thái quản lý dữ liệu và giao diện hồ sơ cá nhân
 class _PatientProfileState extends State<PatientProfile> {
+  // Client Supabase
   final _supabase = Supabase.instance.client;
+  // URL avatar, tên và email người dùng
   String? _avatarUrl;
   String _userName = '';
   String _userEmail = '';
+  // Trạng thái đang tải dữ liệu
   bool _isLoading = false;
 
   @override
+  // Khởi tạo trạng thái: lấy thông tin hồ sơ khi mở màn hình
   void initState() {
     super.initState();
     _getProfile();
   }
 
+  // Lấy thông tin hồ sơ người dùng từ bảng users và auth
   Future<void> _getProfile() async {
     setState(() => _isLoading = true);
     try {
       final userId = _supabase.auth.currentUser!.id;
       final data = await _supabase
           .from('users')
-          .select('name, avatar_url') // Chỉ lấy các trường cần thiết từ hồ sơ công khai
+          .select('name, avatar_url')
           .eq('id', userId)
           .single();
 
       setState(() {
         _userName = data['name'] ?? 'Chưa cập nhật';
         _avatarUrl = data['avatar_url'];
-        // Lấy email từ đối tượng người dùng đã xác thực để đảm bảo chính xác
         _userEmail = _supabase.auth.currentUser!.email ?? 'Chưa cập nhật';
       });
     } catch (e) {
@@ -56,6 +62,7 @@ class _PatientProfileState extends State<PatientProfile> {
     }
   }
 
+  // Tải lên avatar mới từ thư viện ảnh và cập nhật vào Supabase Storage + bảng users
   Future<void> _uploadAvatar() async {
     final imagePicker = ImagePicker();
     final imageFile = await imagePicker.pickImage(
@@ -74,10 +81,10 @@ class _PatientProfileState extends State<PatientProfile> {
       final fileExt = imageFile.path.split('.').last;
       final fileName = '${_supabase.auth.currentUser!.id}/avatar.$fileExt';
       await _supabase.storage.from('avatars').uploadBinary(
-            fileName,
-            bytes,
-            fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
-          );
+        fileName,
+        bytes,
+        fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+      );
       final imageUrlResponse = _supabase.storage.from('avatars').getPublicUrl(fileName);
       await _supabase.from('users').update({'avatar_url': imageUrlResponse}).eq('id', _supabase.auth.currentUser!.id);
       setState(() {
@@ -109,7 +116,8 @@ class _PatientProfileState extends State<PatientProfile> {
       });
     }
   }
-  
+
+  // Thực hiện đăng xuất: xóa session Supabase và chuyển về màn hình login
   Future<void> _signOut() async {
     try {
       await _supabase.auth.signOut();
@@ -123,70 +131,74 @@ class _PatientProfileState extends State<PatientProfile> {
   }
 
   @override
+  // Xây dựng giao diện chính của màn hình hồ sơ
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: Colors.blue))
-        : ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
-            children: [
-              _buildProfileHeader(),
-              const SizedBox(height: 30),
-              _buildProfileOption(
-                icon: Icons.person_outline,
-                title: 'Chỉnh sửa hồ sơ',
-                onTap: () {
-                  context.go('/patient/profile/edit');
-                },
-              ),
-              _buildProfileOption(
-                icon: Icons.notifications_outlined,
-                title: 'Thông báo',
-                onTap: () {
-                  context.go('/patient/profile/personalize_notification');
-                },
-              ),
-              _buildProfileOption(
-                icon: Icons.lock_outline,
-                title: 'Đổi mật khẩu',
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return const ChangePasswordDialog();
-                    }
-                  );
-                },
-              ),
-              _buildProfileOption(
-                icon: Icons.help_outline,
-                title: 'Trợ giúp & Hỗ trợ',
-                onTap: () {
-                  context.go('/patient/profile/help_center');
-                },
-              ),
-              const Divider(height: 40),
-              _buildProfileOption(
-                icon: Icons.logout,
-                title: 'Đăng xuất',
-                isLogout: true,
-                onTap: _signOut,
-              ),
-            ],
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Colors.blue))
+          : ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+        children: [
+          _buildProfileHeader(),
+          const SizedBox(height: 30),
+          // Tùy chọn chỉnh sửa hồ sơ
+          _buildProfileOption(
+            icon: Icons.person_outline,
+            title: 'Chỉnh sửa hồ sơ',
+            onTap: () {
+              context.go('/patient/profile/edit');
+            },
           ),
+          // Tùy chọn cá nhân hóa thông báo
+          _buildProfileOption(
+            icon: Icons.notifications_outlined,
+            title: 'Thông báo',
+            onTap: () {
+              context.go('/patient/profile/personalize_notification');
+            },
+          ),
+          // Tùy chọn đổi mật khẩu
+          _buildProfileOption(
+            icon: Icons.lock_outline,
+            title: 'Đổi mật khẩu',
+            onTap: () {
+              showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return const ChangePasswordDialog();
+                  }
+              );
+            },
+          ),
+          // Tùy chọn trợ giúp & hỗ trợ
+          _buildProfileOption(
+            icon: Icons.help_outline,
+            title: 'Trợ giúp & Hỗ trợ',
+            onTap: () {
+              context.go('/patient/profile/help_center');
+            },
+          ),
+          const Divider(height: 40),
+          // Tùy chọn đăng xuất
+          _buildProfileOption(
+            icon: Icons.logout,
+            title: 'Đăng xuất',
+            isLogout: true,
+            onTap: _signOut,
+          ),
+        ],
+      ),
     );
   }
 
+  // Phần header hiển thị avatar, tên và email người dùng
   Widget _buildProfileHeader() {
     ImageProvider? backgroundImage;
-    // Kiểm tra xem URL avatar là một liên kết web hay data URI
     if (_avatarUrl != null) {
       if (_avatarUrl!.startsWith('http')) {
-        // Nếu là URL, sử dụng NetworkImage
         backgroundImage = NetworkImage(_avatarUrl!);
       } else if (_avatarUrl!.startsWith('data:image')) {
-        // Nếu là data URI, giải mã chuỗi base64
         try {
           final uri = Uri.parse(_avatarUrl!);
           if (uri.data != null) {
@@ -200,8 +212,8 @@ class _PatientProfileState extends State<PatientProfile> {
     }
 
     return Column(
-      // crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        // Avatar có thể tap để thay đổi
         GestureDetector(
           onTap: _uploadAvatar,
           child: CircleAvatar(
@@ -234,6 +246,7 @@ class _PatientProfileState extends State<PatientProfile> {
     );
   }
 
+  // Widget một mục tùy chọn trong danh sách (có icon, tiêu đề và hành động tap)
   Widget _buildProfileOption({
     required IconData icon,
     required String title,

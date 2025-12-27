@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 
+// Widget chính hiển thị màn hình đặt lịch khám của bệnh nhân
 class PatientAppointment extends StatefulWidget {
   const PatientAppointment({Key? key, this.title}) : super(key: key);
   final String? title;
@@ -10,25 +11,31 @@ class PatientAppointment extends StatefulWidget {
   State<PatientAppointment> createState() => _PatientAppointmentState();
 }
 
+// Trạng thái của màn hình đặt lịch khám
 class _PatientAppointmentState extends State<PatientAppointment> {
+  // Khởi tạo client Supabase và controller cho ô tìm kiếm
   final SupabaseClient supabase = Supabase.instance.client;
   final TextEditingController searchController = TextEditingController();
-  
+
+  // Danh sách bác sĩ gốc và danh sách đã lọc
   List<Map<String, dynamic>> _allDoctors = [];
   List<Map<String, dynamic>> _filteredDoctors = [];
   List<String> _allSpecialties = ["Tất cả"];
-  
+
+  // Bộ lọc chuyên khoa được chọn, hiển thị chỉ hôm nay và trạng thái loading
   String selectedSpecialty = "Tất cả";
   bool showTodayOnly = false;
   bool _isLoading = true;
 
   @override
+  // Khởi tạo trạng thái ban đầu: lấy dữ liệu bác sĩ và lắng nghe thay đổi tìm kiếm
   void initState() {
     super.initState();
     _fetchDoctors();
     searchController.addListener(_filterDoctors);
   }
 
+  // Lấy danh sách tất cả bác sĩ từ Supabase kèm thông tin chuyên khoa
   Future<void> _fetchDoctors() async {
     try {
       final response = await supabase
@@ -37,19 +44,19 @@ class _PatientAppointmentState extends State<PatientAppointment> {
           .eq('role', 'doctor');
 
       final List<Map<String, dynamic>> rawData = List<Map<String, dynamic>>.from(response);
-      
-      // Flatten the data structure
+
+      // Biến đổi dữ liệu lồng nhau thành dạng phẳng dễ sử dụng
       final List<Map<String, dynamic>> data = rawData.map((user) {
-         final info = user['doctor_info'] != null ? (user['doctor_info'] as Map<String, dynamic>) : {};
-         return {
-           'id': user['id'],
-           'name': user['name'],
-           'email': user['email'],
-           'avatar_url': user['avatar_url'],
-           'specialty': info['specialty'] ?? 'Đa khoa',
-           'rating': info['rating'] ?? 5.0,
-           'reviews_count': info['reviews_count'] ?? 0,
-         };
+        final info = user['doctor_info'] != null ? (user['doctor_info'] as Map<String, dynamic>) : {};
+        return {
+          'id': user['id'],
+          'name': user['name'],
+          'email': user['email'],
+          'avatar_url': user['avatar_url'],
+          'specialty': info['specialty'] ?? 'Đa khoa',
+          'rating': info['rating'] ?? 5.0,
+          'reviews_count': info['reviews_count'] ?? 0,
+        };
       }).toList();
 
       if (mounted) {
@@ -68,6 +75,7 @@ class _PatientAppointmentState extends State<PatientAppointment> {
     }
   }
 
+  // Trích xuất danh sách các chuyên khoa duy nhất từ dữ liệu bác sĩ để làm bộ lọc
   void _extractUniqueSpecialties() {
     final Set<String> specialties = <String>{};
     for (var doc in _allDoctors) {
@@ -78,6 +86,7 @@ class _PatientAppointmentState extends State<PatientAppointment> {
     _allSpecialties = ["Tất cả", ...specialties.toList()..sort()];
   }
 
+  // Lọc danh sách bác sĩ theo từ khóa tìm kiếm và chuyên khoa đã chọn
   void _filterDoctors() {
     final query = searchController.text.toLowerCase();
     setState(() {
@@ -87,21 +96,20 @@ class _PatientAppointmentState extends State<PatientAppointment> {
 
         final matchesSearch = name.contains(query) || specialty.contains(query);
         final matchesSpecialty = selectedSpecialty == "Tất cả" || doctor['specialty'] == selectedSpecialty;
-        
-        // Note: 'availableToday' logic would require checking schedules table, skipping for MVP
-        
+
         return matchesSearch && matchesSpecialty;
       }).toList();
     });
   }
 
   @override
+  // Giải phóng tài nguyên khi widget bị hủy
   void dispose() {
     searchController.dispose();
     super.dispose();
   }
 
-  /// Fetches booked slots for a specific doctor on a specific date
+  // Lấy danh sách các khung giờ đã đặt của một bác sĩ trong một ngày cụ thể
   Future<List<String>> _getBookedSlots(String doctorId, DateTime date) async {
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
@@ -116,13 +124,14 @@ class _PatientAppointmentState extends State<PatientAppointment> {
     return (response as List).map((e) => e['time_slot'] as String).toList();
   }
 
+  // Hiển thị dialog đặt lịch khám cho bác sĩ được chọn
   void _showBookingDialog(Map<String, dynamic> doctor) {
     DateTime selectedDate = DateTime.now();
     String? selectedTime;
     List<String> bookedSlots = [];
     bool loadingSlots = false;
 
-    // Standard business hours
+    // Danh sách các khung giờ làm việc tiêu chuẩn
     final List<String> allTimeSlots = [
       "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00",
       "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30"
@@ -132,8 +141,8 @@ class _PatientAppointmentState extends State<PatientAppointment> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setStateDialog) {
-          
-          // Helper to fetch slots when date changes
+
+          // Hàm lấy danh sách khung giờ đã đặt khi thay đổi ngày
           void fetchSlots() async {
             setStateDialog(() => loadingSlots = true);
             final booked = await _getBookedSlots(doctor['id'], selectedDate);
@@ -141,20 +150,13 @@ class _PatientAppointmentState extends State<PatientAppointment> {
               setStateDialog(() {
                 bookedSlots = booked;
                 loadingSlots = false;
-                selectedTime = null; // Reset selection
+                selectedTime = null;
               });
             }
           }
 
-          // Initial fetch
-          if (loadingSlots == false && bookedSlots.isEmpty && selectedTime == null) {
-             // Hacky way to trigger only once or we can pass a future builder
-             // checks if we haven't fetched yet for today
-          }
+          if (loadingSlots == false && bookedSlots.isEmpty && selectedTime == null) {}
 
-          // We'll use a user-triggered refresh for simplicity or fetch immediately on init
-          // For this implementation, let's fetch immediately
-          
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: Text("Đặt lịch: ${doctor['name'] ?? 'Bác sĩ'}", textAlign: TextAlign.center),
@@ -164,56 +166,57 @@ class _PatientAppointmentState extends State<PatientAppointment> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                     Text("${_getSpecialtyDisplay(doctor['specialty'])} • MediHouse", style: const TextStyle(color: Colors.grey)), // Added static location
-                     const SizedBox(height: 10),
-                     const Text("Chọn ngày khám", style: TextStyle(fontWeight: FontWeight.bold)),
-                     const SizedBox(height: 10),
-                     CalendarDatePicker(
-                       initialDate: selectedDate,
-                       firstDate: DateTime.now(),
-                       lastDate: DateTime.now().add(const Duration(days: 30)),
-                       onDateChanged: (date) {
-                         setStateDialog(() {
-                           selectedDate = date;
-                           selectedTime = null;
-                         });
-                         fetchSlots();
-                       },
-                     ),
-                     const Divider(),
-                     const Text("Khung giờ trống", style: TextStyle(fontWeight: FontWeight.bold)),
-                     const SizedBox(height: 10),
-                     
-                     FutureBuilder<List<String>>(
-                       future: _getBookedSlots(doctor['id'], selectedDate),
-                       builder: (context, snapshot) {
-                         if (snapshot.connectionState == ConnectionState.waiting) {
-                           return const Center(child: CircularProgressIndicator());
-                         }
-                         
-                         final booked = snapshot.data ?? [];
-                         final availableSlots = allTimeSlots.where((slot) => !booked.contains(slot)).toList();
+                    Text("${_getSpecialtyDisplay(doctor['specialty'])} • MediHouse", style: const TextStyle(color: Colors.grey)),
+                    const SizedBox(height: 10),
+                    const Text("Chọn ngày khám", style: const TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 10),
+                    CalendarDatePicker(
+                      initialDate: selectedDate,
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 30)),
+                      onDateChanged: (date) {
+                        setStateDialog(() {
+                          selectedDate = date;
+                          selectedTime = null;
+                        });
+                        fetchSlots();
+                      },
+                    ),
+                    const Divider(),
+                    const Text("Khung giờ trống", style: const TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 10),
 
-                         if (availableSlots.isEmpty) {
-                           return const Text("Hết chỗ ngày này", style: TextStyle(color: Colors.red));
-                         }
+                    // Hiển thị các khung giờ còn trống dựa trên dữ liệu đã đặt
+                    FutureBuilder<List<String>>(
+                      future: _getBookedSlots(doctor['id'], selectedDate),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
 
-                         return Wrap(
-                           spacing: 8,
-                           children: availableSlots.map((time) {
-                             return ChoiceChip(
-                               label: Text(time),
-                               selected: selectedTime == time,
-                               onSelected: (val) {
-                                 setStateDialog(() => selectedTime = val ? time : null);
-                               },
-                               selectedColor: Colors.blue,
-                               labelStyle: TextStyle(color: selectedTime == time ? Colors.white : Colors.black),
-                             );
-                           }).toList(),
-                         );
-                       },
-                     )
+                        final booked = snapshot.data ?? [];
+                        final availableSlots = allTimeSlots.where((slot) => !booked.contains(slot)).toList();
+
+                        if (availableSlots.isEmpty) {
+                          return const Text("Hết chỗ ngày này", style: const TextStyle(color: Colors.red));
+                        }
+
+                        return Wrap(
+                          spacing: 8,
+                          children: availableSlots.map((time) {
+                            return ChoiceChip(
+                              label: Text(time),
+                              selected: selectedTime == time,
+                              onSelected: (val) {
+                                setStateDialog(() => selectedTime = val ? time : null);
+                              },
+                              selectedColor: Colors.blue,
+                              labelStyle: TextStyle(color: selectedTime == time ? Colors.white : Colors.black),
+                            );
+                          }).toList(),
+                        );
+                      },
+                    )
                   ],
                 ),
               ),
@@ -234,13 +237,13 @@ class _PatientAppointmentState extends State<PatientAppointment> {
     );
   }
 
+  // Thực hiện xác nhận và lưu lịch hẹn vào bảng appointments
   Future<void> _confirmBooking(Map<String, dynamic> doctor, DateTime date, String time) async {
     try {
       final userId = supabase.auth.currentUser!.id;
-      
-      // Create timestamp for the appointment date
+
       final appointmentDate = DateTime(date.year, date.month, date.day);
-      
+
       await supabase.from('appointments').insert({
         'patient_id': userId,
         'doctor_id': doctor['id'],
@@ -261,11 +264,13 @@ class _PatientAppointmentState extends State<PatientAppointment> {
   }
 
   @override
+  // Xây dựng giao diện chính của màn hình danh sách bác sĩ và đặt lịch
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       body: Column(
         children: <Widget>[
+          // Ô tìm kiếm bác sĩ hoặc chuyên khoa
           Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
@@ -279,8 +284,8 @@ class _PatientAppointmentState extends State<PatientAppointment> {
               ),
             ),
           ),
-          
-          // Filters
+
+          // Bộ lọc chuyên khoa
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: SingleChildScrollView(
@@ -288,10 +293,9 @@ class _PatientAppointmentState extends State<PatientAppointment> {
               child: Row(
                 children: [
                   FilterChip(
-                    label: Text(selectedSpecialty), 
+                    label: Text(selectedSpecialty),
                     selected: selectedSpecialty != "Tất cả",
                     onSelected: (val) {
-                      // Logic to pick specialty
                       showModalBottomSheet(context: context, builder: (_) {
                         return ListView(
                           children: _allSpecialties.map((s) => ListTile(
@@ -313,24 +317,25 @@ class _PatientAppointmentState extends State<PatientAppointment> {
               ),
             ),
           ),
-          
+
           const SizedBox(height: 10),
-          
+
+          // Danh sách bác sĩ hoặc trạng thái loading/không có kết quả
           Expanded(
-            child: _isLoading 
-              ? const Center(child: CircularProgressIndicator())
-              : _filteredDoctors.isEmpty 
-                  ? const Center(child: Text("Không tìm thấy bác sĩ nào"))
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _filteredDoctors.length,
-                      itemBuilder: (context, index) {
-                        return DoctorCard(
-                          doctor: _filteredDoctors[index],
-                          onBook: () => _showBookingDialog(_filteredDoctors[index]),
-                        );
-                      },
-                    ),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _filteredDoctors.isEmpty
+                ? const Center(child: Text("Không tìm thấy bác sĩ nào"))
+                : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _filteredDoctors.length,
+              itemBuilder: (context, index) {
+                return DoctorCard(
+                  doctor: _filteredDoctors[index],
+                  onBook: () => _showBookingDialog(_filteredDoctors[index]),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -338,6 +343,7 @@ class _PatientAppointmentState extends State<PatientAppointment> {
   }
 }
 
+// Widget hiển thị thẻ thông tin của một bác sĩ
 class DoctorCard extends StatelessWidget {
   final Map<String, dynamic> doctor;
   final VoidCallback onBook;
@@ -357,15 +363,16 @@ class DoctorCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Avatar và thông tin cơ bản của bác sĩ
           Row(
             children: [
               CircleAvatar(
-                radius: 30, 
-                backgroundImage: doctor['avatar_url'] != null 
-                    ? NetworkImage(doctor['avatar_url']) 
+                radius: 30,
+                backgroundImage: doctor['avatar_url'] != null
+                    ? NetworkImage(doctor['avatar_url'])
                     : null,
-                child: doctor['avatar_url'] == null 
-                    ? const Icon(Icons.person, size: 30) 
+                child: doctor['avatar_url'] == null
+                    ? const Icon(Icons.person, size: 30)
                     : null,
               ),
               const SizedBox(width: 16),
@@ -387,6 +394,7 @@ class DoctorCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
+          // Nút đặt lịch khám
           ElevatedButton(
             onPressed: onBook,
             style: ElevatedButton.styleFrom(
@@ -403,6 +411,7 @@ class DoctorCard extends StatelessWidget {
 
 }
 
+// Hàm chuyển đổi tên chuyên khoa tiếng Anh sang tiếng Việt để hiển thị
 String _getSpecialtyDisplay(String? specialty) {
   if (specialty == null) return 'Đa khoa';
   switch (specialty) {

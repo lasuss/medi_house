@@ -3,6 +3,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:medi_house/helpers/UserManager.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+// Widget chính cho màn hình quét CCCD để lấy thông tin định danh
 class PatientScanNationalID extends StatefulWidget {
   const PatientScanNationalID({super.key});
 
@@ -11,21 +12,22 @@ class PatientScanNationalID extends StatefulWidget {
       _PatientScanNationalIDState();
 }
 
+// Trạng thái quản lý việc quét QR trên CCCD và cập nhật thông tin người dùng
 class _PatientScanNationalIDState extends State<PatientScanNationalID> {
+  // Trạng thái đã quét thành công và controller camera
   bool scanned = false;
   MobileScannerController cameraController = MobileScannerController();
 
-  // Field Controllers
+  // Các controller cho ô hiển thị thông tin từ CCCD
   final TextEditingController _idController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _dobController = TextEditingController();
   final TextEditingController _genderController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
 
+  // Phân tích dữ liệu QR từ CCCD Việt Nam (định dạng ID|Old_ID|Name|DOB|Gender|Address|...)
   Map<String, String>? _parseCCCD(String qrData) {
     try {
-      // Vietnam CCCD QR format:
-      // ID|Old_ID|Name|DOB|Gender|Address|DateOfIssue
       final parts = qrData.split('|');
       if (parts.length >= 6) {
         return {
@@ -44,14 +46,15 @@ class _PatientScanNationalIDState extends State<PatientScanNationalID> {
     return null;
   }
 
+  // Định dạng ngày từ ddMMyyyy sang dd/MM/yyyy
   String _formatDate(String rawDate) {
-    // rawDate is usually ddMMyyyy
     if (rawDate.length == 8) {
       return "${rawDate.substring(0, 2)}/${rawDate.substring(2, 4)}/${rawDate.substring(4)}";
     }
     return rawDate;
   }
 
+  // Chuyển đổi ngày từ dd/MM/yyyy sang YYYY-MM-DD để lưu vào database
   String _convertToISO(String displayDate) {
     try {
       final parts = displayDate.split('/');
@@ -62,6 +65,7 @@ class _PatientScanNationalIDState extends State<PatientScanNationalID> {
     return displayDate;
   }
 
+  // Hiển thị bottom sheet với thông tin đã quét và nút xác nhận lưu vào Supabase
   void _showResultSheet(Map<String, String> data) {
     _idController.text = data['id'] ?? '';
     _nameController.text = data['name'] ?? '';
@@ -106,6 +110,7 @@ class _PatientScanNationalIDState extends State<PatientScanNationalID> {
               const SizedBox(height: 12),
               _buildTextField('Địa chỉ', _addressController, maxLines: 2),
               const SizedBox(height: 24),
+              // Nút xác nhận và lưu thông tin vào bảng users
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -114,31 +119,30 @@ class _PatientScanNationalIDState extends State<PatientScanNationalID> {
                     try {
                       final userId = UserManager.instance.supabaseUser?.id;
                       if (userId != null) {
-                         // Convert DOB to YYYY-MM-DD for Supabase
-                         final dobForDB = _convertToISO(_dobController.text);
-                         
-                         await Supabase.instance.client.from('users').update({
-                           'name': _nameController.text,
-                           'national_id': _idController.text,
-                           'dob': dobForDB,
-                           'gender': _genderController.text,
-                           'address': _addressController.text,
-                         }).eq('id', userId);
-                         
-                         if (mounted) {
-                           ScaffoldMessenger.of(context).showSnackBar(
-                             const SnackBar(content: Text('Đã cập nhật thông tin thành công!')),
-                           );
-                           Navigator.pop(context); // Close sheet
-                           Navigator.pop(context, true); // Return success
-                         }
+                        final dobForDB = _convertToISO(_dobController.text);
+
+                        await Supabase.instance.client.from('users').update({
+                          'name': _nameController.text,
+                          'national_id': _idController.text,
+                          'dob': dobForDB,
+                          'gender': _genderController.text,
+                          'address': _addressController.text,
+                        }).eq('id', userId);
+
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Đã cập nhật thông tin thành công!')),
+                          );
+                          Navigator.pop(context);
+                          Navigator.pop(context, true);
+                        }
                       }
                     } catch (e) {
-                       if (mounted) {
-                         ScaffoldMessenger.of(context).showSnackBar(
-                           SnackBar(content: Text('Lỗi khi lưu: $e')),
-                         );
-                       }
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Lỗi khi lưu: $e')),
+                        );
+                      }
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -155,28 +159,30 @@ class _PatientScanNationalIDState extends State<PatientScanNationalID> {
         );
       },
     ).whenComplete(() {
-       setState(() {
-        scanned = false; // Allow rescanning
+      setState(() {
+        scanned = false;
       });
     });
   }
 
+  // Ô text chỉ đọc để hiển thị thông tin từ CCCD
   Widget _buildTextField(String label, TextEditingController controller, {int maxLines = 1}) {
     return TextField(
       controller: controller,
       maxLines: maxLines,
-      readOnly: true, // Make read-only
+      readOnly: true,
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         filled: true,
-        fillColor: Colors.grey[200], // Visual indication
+        fillColor: Colors.grey[200],
       ),
     );
   }
 
   @override
+  // Xây dựng giao diện chính với camera quét QR và hướng dẫn
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFFF),
@@ -195,13 +201,14 @@ class _PatientScanNationalIDState extends State<PatientScanNationalID> {
           child: Column(
             children: [
               const SizedBox(height: 20),
+              // Khu vực camera quét với overlay khung QR
               Container(
                 height: 300,
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: const Color(0xFF4A515A),
                   borderRadius: BorderRadius.circular(16),
-                   boxShadow: [
+                  boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.2),
                       blurRadius: 10,
@@ -217,50 +224,47 @@ class _PatientScanNationalIDState extends State<PatientScanNationalID> {
                         controller: cameraController,
                         onDetect: (barcodeCapture) {
                           if (!scanned && barcodeCapture.barcodes.isNotEmpty) {
-                             final code = barcodeCapture.barcodes.first.rawValue ?? '';
-                             if (code.isNotEmpty) {
-                               debugPrint("QR DATA: $code");
-                               final parsedData = _parseCCCD(code);
-                               if (parsedData != null) {
-                                  setState(() {
-                                    scanned = true;
-                                  });
-                                  _showResultSheet(parsedData);
-                               } else {
-                                  // Invalid format logic (optional)
-                               }
-                             }
+                            final code = barcodeCapture.barcodes.first.rawValue ?? '';
+                            if (code.isNotEmpty) {
+                              debugPrint("Dữ liệu QR quét được: $code");
+                              final parsedData = _parseCCCD(code);
+                              if (parsedData != null) {
+                                setState(() {
+                                  scanned = true;
+                                });
+                                _showResultSheet(parsedData);
+                              }
+                            }
                           }
                         },
                       ),
-                      // Scanner Overlay
-                       Center(
+                      Center(
                         child: Container(
-                          width: 250,
-                          height: 250,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.blue.withOpacity(0.5), width: 2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  _corner(true, true), // Top Left
-                                  _corner(true, false), // Top Right
-                                ],
-                              ),
-                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  _corner(false, true), // Bottom Left
-                                  _corner(false, false), // Bottom Right
-                                ],
-                              ),
-                            ],
-                          )
+                            width: 250,
+                            height: 250,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.blue.withOpacity(0.5), width: 2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    _corner(true, true),
+                                    _corner(true, false),
+                                  ],
+                                ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    _corner(false, true),
+                                    _corner(false, false),
+                                  ],
+                                ),
+                              ],
+                            )
                         ),
                       ),
                     ],
@@ -268,21 +272,23 @@ class _PatientScanNationalIDState extends State<PatientScanNationalID> {
                 ),
               ),
               const SizedBox(height: 24),
+              // Hướng dẫn người dùng đưa QR vào khung
               const Text(
                 "Di chuyển camera đến mã QR trên \nCăn Cước Công Dân",
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Color(0xFF2D3748),
-                  fontSize: 16,
-                  height: 1.5,
-                  fontWeight: FontWeight.w500
+                    color: Color(0xFF2D3748),
+                    fontSize: 16,
+                    height: 1.5,
+                    fontWeight: FontWeight.w500
                 ),
               ),
-               const SizedBox(height: 40),
+              const SizedBox(height: 40),
               const SizedBox(height: 16),
-               SizedBox(
-                 width: double.infinity,
-                 height: 48,
+              // Nút quay lại màn hình trước
+              SizedBox(
+                width: double.infinity,
+                height: 48,
                 child: TextButton(
                   onPressed: () {
                     Navigator.pop(context);
@@ -297,7 +303,8 @@ class _PatientScanNationalIDState extends State<PatientScanNationalID> {
     );
   }
 
-   Widget _corner(bool isTop, bool isLeft) {
+  // Widget góc khung overlay scanner (4 góc xanh)
+  Widget _corner(bool isTop, bool isLeft) {
     return Container(
       width: 20,
       height: 20,
@@ -313,6 +320,7 @@ class _PatientScanNationalIDState extends State<PatientScanNationalID> {
   }
 
   @override
+  // Giải phóng tài nguyên camera và các controller
   void dispose() {
     cameraController.dispose();
     _idController.dispose();
