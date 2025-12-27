@@ -22,7 +22,7 @@ class Medicine {
     required this.createdAt,
   });
 
-  factory Medicine.fromJson(Map<String, dynamic> json) {
+  factory Medicine.fromJson(Map<String, dynamic> json) { //Factory constructor dùng để chuyển dữ liệu từ API sang object Medicine
     return Medicine(
       id: json['id'] ?? '',
       name: json['name'] ?? 'Unknown Medicine',
@@ -36,7 +36,7 @@ class Medicine {
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson() { //Chuyển object Medicine thành JSON để gửi lên server
     return {
       'name': name,
       'active_ingredient': activeIngredient,

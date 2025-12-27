@@ -31,9 +31,9 @@ class _PatientChatScreenState extends State<PatientChatScreen> {
     _myId = _supabase.auth.currentUser!.id;
     _setupMessageStream();
   }
-
+  // Khởi tạo stream tin nhắn giữa người dùng hiện tại và người nhận
   void _setupMessageStream() {
-    print('Setting up stream for: $_myId and ${widget.receiverId}');
+    print('Khởi tạo stream chat giữa $_myId và ${widget.receiverId}');
     _messagesStream = _supabase
         .from('messages')
         .stream(primaryKey: ['id'])
@@ -48,7 +48,7 @@ class _PatientChatScreenState extends State<PatientChatScreen> {
         });
   }
 
-  Future<void> _sendMessage() async {
+  Future<void> _sendMessage() async { //Gửi tin nhắn
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
@@ -63,7 +63,7 @@ class _PatientChatScreenState extends State<PatientChatScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error sending message: $e')),
+          SnackBar(content: Text('Gửi tin nhắn thất bại: $e')),
         );
       }
     }

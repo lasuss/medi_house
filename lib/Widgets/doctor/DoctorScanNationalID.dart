@@ -41,14 +41,14 @@ class _DoctorScanNationalIDState extends State<DoctorScanNationalID> {
     return null;
   }
 
-  String _formatDate(String rawDate) {
+  String _formatDate(String rawDate) { // Chuyển đổi ngày sinh từ dạng YYYYMMDD sang DD/MM/YYYY
     if (rawDate.length == 8) {
       return "${rawDate.substring(0, 2)}/${rawDate.substring(2, 4)}/${rawDate.substring(4)}";
     }
     return rawDate;
   }
 
-  String _convertToISO(String displayDate) {
+  String _convertToISO(String displayDate) { // Chuyển đổi ngày sinh từ dạng DD/MM/YYYY sang YYYY-MM-DD
     try {
       final parts = displayDate.split('/');
       if (parts.length == 3) {

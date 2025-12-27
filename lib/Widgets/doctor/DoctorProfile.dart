@@ -14,7 +14,7 @@ class DoctorProfile extends StatefulWidget {
   @override
   State<DoctorProfile> createState() => _DoctorProfileState();
 }
-
+//State của DoctorProfile
 class _DoctorProfileState extends State<DoctorProfile> {
   final _supabase = Supabase.instance.client;
   String? _avatarUrl;
@@ -28,7 +28,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
     _getProfile();
   }
 
-  Future<void> _getProfile() async {
+  Future<void> _getProfile() async { //Hàm lấy dữ liệu hồ sơ bác sĩ
     setState(() => _isLoading = true);
     try {
       final userId = _supabase.auth.currentUser!.id;
@@ -66,7 +66,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
     }
   }
 
-  Future<void> _uploadAvatar() async {
+  Future<void> _uploadAvatar() async { //Hàm tải lên avatar 1. Mở thư viện ảnh (ImagePicker) -> Chọn ảnh -> Convert ảnh thành bytes -> Gửi lên Storage --> Lấy public URL --> Cập nhật avatar trong DB -> Cập nhật UI
     final imagePicker = ImagePicker();
     final imageFile = await imagePicker.pickImage(
       source: ImageSource.gallery,
@@ -123,7 +123,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
     }
   }
 
-  Future<void> _signOut() async {
+  Future<void> _signOut() async { //Hàm đăng xuất (đăng xuất, xóa thông tin user local, điều hướng về login)
     try {
       await _supabase.auth.signOut();
       UserManager().clearUser();
@@ -143,6 +143,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
   }
 
   @override
+  //Hàm chính để dựng giao diện
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -164,7 +165,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
               ),
               child: Column(
                 children: [
-                  _buildProfileHeader(),
+                  _buildProfileHeader(), //Hiển thị avatar, nút đổi ảnh
                   const SizedBox(height: 16),
                   Text(
                     _userName,
@@ -192,8 +193,8 @@ class _DoctorProfileState extends State<DoctorProfile> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 children: [
-                  _buildSectionHeader('Cài đặt tài khoản'),
-                  _buildSettingsItem(
+                  _buildSectionHeader('Cài đặt tài khoản'), // tiêu đề từng nhóm cài đặt
+                  _buildSettingsItem( //Item trong danh sách cài đặt
                     Icons.person_outline,
                     'Chỉnh sửa hồ sơ cá nhân',
                         () {
@@ -253,7 +254,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
     );
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildProfileHeader() { //Hiển thị avatar, nút đổi ảnh
     ImageProvider? backgroundImage;
 
     if (_avatarUrl != null) {
@@ -308,7 +309,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(String title) { //Hiển thị tiêu đề từng nhóm cài đặt
     return Padding(
       padding: const EdgeInsets.only(bottom: 10, left: 4),
       child: Align(
@@ -325,7 +326,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
     );
   }
 
-  Widget _buildSettingsItem(
+  Widget _buildSettingsItem( //Hiển thị item trong danh sách cài đặt
       IconData icon,
       String title,
       VoidCallback onTap, {

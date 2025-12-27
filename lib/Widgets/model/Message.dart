@@ -1,8 +1,8 @@
 class Message {
   final String? id;
   final String senderId;
-  final String? receiverId; // Nullable for channel messages
-  final String? channelId;  // New field
+  final String? receiverId;
+  final String? channelId;
   final String content;
   final DateTime createdAt;
   final bool isRead;
@@ -17,7 +17,7 @@ class Message {
     this.isRead = false,
   });
 
-  factory Message.fromJson(Map<String, dynamic> json) {
+  factory Message.fromJson(Map<String, dynamic> json) { //Factory constructor dùng để chuyển dữ liệu từ JSON sang object Message
     return Message(
       id: json['id'],
       senderId: json['sender_id'],
@@ -29,7 +29,7 @@ class Message {
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson() { //Chuyển object Message thành JSON để gửi lên server
     return {
       'sender_id': senderId,
       'receiver_id': receiverId,

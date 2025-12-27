@@ -44,7 +44,7 @@ class _PatientAddProfileState extends State<PatientAddProfile> {
   
   bool _isLoading = false;
 
-  Future<void> _submit() async {
+  Future<void> _submit() async { // Submit form
     if (!_formKey.currentState!.validate()) return;
     
     setState(() => _isLoading = true);
@@ -98,10 +98,7 @@ class _PatientAddProfileState extends State<PatientAddProfile> {
         _dobController.text = result['dob'] ?? '';
         _nationalIdController.text = result['id'] ?? '';
         _gender = (result['gender'] == 'Nam' || result['gender'] == 'Nữ') ? result['gender']! : 'Nam';
-        _addressStreetController.text = result['address'] ?? '';
-        
-        // Reset dropdowns as we are using the full address as street for now
-        // Or keep them as is and let user refine
+        _addressStreetController.text = result['address'] ?? ''; // Tạm dùng toàn bộ địa chỉ cho street, có thể reset dropdown hoặc để người dùng chỉnh lại
       });
       
       ScaffoldMessenger.of(context).showSnackBar(
@@ -110,7 +107,7 @@ class _PatientAddProfileState extends State<PatientAddProfile> {
     }
   }
 
-  Future<void> _syncInfo(bool? value) async {
+  Future<void> _syncInfo(bool? value) async { // Đồng bộ hóa thông tin từ tài khoản
     setState(() => _useMyInfo = value ?? false);
     
     if (_useMyInfo) {
@@ -150,7 +147,7 @@ class _PatientAddProfileState extends State<PatientAddProfile> {
         }
       }
     } else {
-      // Clear fields if unchecked? Or leave them? usually clearer to clear or reset to manual
+      // Khi người dùng bỏ chọn, nên reset các trường để tránh nhầm lẫn hoặc cho phép nhập thủ công nếu cần
       setState(() {
         _nameController.clear();
         _dobController.clear();
@@ -200,7 +197,7 @@ class _PatientAddProfileState extends State<PatientAddProfile> {
                       width: double.infinity,
                       height: 50,
                       child: OutlinedButton.icon(
-                        onPressed: _useMyInfo ? null : _handleScanCCCD, // Disable scan if using my info
+                        onPressed: _useMyInfo ? null : _handleScanCCCD, // Tắt chức năng quét nếu sử dụng thông tin của tôi.
                         icon: const Icon(Icons.qr_code_scanner),
                         label: const Text('QUÉT MÃ BHYT/CCCD'),
                         style: OutlinedButton.styleFrom(

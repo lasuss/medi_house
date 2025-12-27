@@ -1,7 +1,7 @@
 
 import 'package:medi_house/Widgets/model/Medicine.dart';
 
-class Inventory {
+class Inventory { //Model Inventory quản lý tồn kho thuốc
   final String id;
   final String medicineId;
   final String? batchNumber;
@@ -10,7 +10,7 @@ class Inventory {
   final DateTime createdAt;
   final Medicine? medicine; // Joined data
 
-  Inventory({
+  Inventory({ // Constructor khởi tạo đối tượng Inventory
     required this.id,
     required this.medicineId,
     this.batchNumber,
@@ -20,7 +20,7 @@ class Inventory {
     this.medicine,
   });
 
-  factory Inventory.fromJson(Map<String, dynamic> json) {
+  factory Inventory.fromJson(Map<String, dynamic> json) { //Factory constructor dùng để chuyển dữ liệu từ JSON sang object Inventory
     return Inventory(
       id: json['id'],
       medicineId: json['medicine_id'],
@@ -32,7 +32,7 @@ class Inventory {
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson() { //Chuyển object Inventory thành JSON để gửi lên server
     return {
       'medicine_id': medicineId,
       'batch_number': batchNumber,

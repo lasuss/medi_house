@@ -4,12 +4,12 @@
   import 'package:medi_house/Widgets/doctor/DoctorRecordDetailEdit.dart';
 
 
-  class DoctorRecordDetail extends StatefulWidget {
-    const DoctorRecordDetail({
-      Key? key,
-      this.title,
-      required this.recordId,
-    }) : super(key: key);
+class DoctorRecordDetail extends StatefulWidget { //Hiển thị chi tiết record
+  const DoctorRecordDetail({
+    Key? key,
+    this.title,
+    required this.recordId,
+  }) : super(key: key);
 
     final String? title;
     final String recordId;
@@ -18,8 +18,8 @@
     State<DoctorRecordDetail> createState() => _DoctorRecordDetailState();
   }
 
-  class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
-    final supabase = Supabase.instance.client;
+class _DoctorRecordDetailState extends State<DoctorRecordDetail> { //State của DoctorRecordDetail
+  final supabase = Supabase.instance.client;
 
     bool isLoading = true;
 
@@ -56,22 +56,22 @@
             .eq('id', widget.recordId)
             .single();
 
-        // ===== PRESCRIPTION + ITEMS =====
-        final prescriptionRes = await supabase
-            .from('prescriptions')
-            .select('''
-              prescription_items (
-                quantity,
-                instructions,
-                medicine:medicine_id (
-                  name,
-                  unit,
-                  description
-                )
+      // ===== PRESCRIPTION + ITEMS =====
+      final prescriptionRes = await supabase //Lấy thông tin đơn thuốc
+          .from('prescriptions')
+          .select('''
+            prescription_items (
+              quantity,
+              instructions,
+              medicine:medicine_id (
+                name,
+                unit,
+                description
               )
-            ''')
-            .eq('record_id', widget.recordId)
-            .maybeSingle();
+            )
+          ''')
+          .eq('record_id', widget.recordId)
+          .maybeSingle();
 
         setState(() {
           record = recordRes;
@@ -114,13 +114,13 @@
     }
 
 
-    @override
-    Widget build(BuildContext context) {
-      if (isLoading) {
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        );
-      }
+  @override
+  Widget build(BuildContext context) { //Hàm chính để dựng giao diện
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
       final String patientName =
       patient?['name'] != null && patient!['name'].toString().isNotEmpty
@@ -131,7 +131,7 @@
         backgroundColor: const Color(0xFFF5F7FA),
         appBar: AppBar(
           title: Text(
-            widget.title ?? 'Record Detail',
+            widget.title ?? 'Chi tiết hồ sơ',
             style: const TextStyle(
               color: Color(0xFF2D3748),
               fontWeight: FontWeight.bold,
@@ -251,35 +251,35 @@
                 ),
               ),
 
-              const SizedBox(height: 20),
-              // ===== Prescription =====
-              const Text(
-                'Đơn thuốc',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D3748),
-                ),
+            const SizedBox(height: 20),
+            // ===== Prescription =====
+            const Text(
+              'Đơn thuốc',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2D3748),
               ),
-              const SizedBox(height: 10),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: prescriptionItems.isEmpty
-                    ? const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('No prescription'),
-                )
-                    : ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: prescriptionItems.length,
-                  separatorBuilder: (_, __) =>
-                  const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final item = prescriptionItems[index];
+            ),
+            const SizedBox(height: 10),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: prescriptionItems.isEmpty
+                  ? const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text('Không có đơn thuốc'),
+              )
+                  : ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: prescriptionItems.length,
+                separatorBuilder: (_, __) =>
+                const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final item = prescriptionItems[index];
 
                     return ListTile(
                       leading: const FaIcon(
@@ -323,82 +323,82 @@
                             ),
                           const SizedBox(height: 4),
 
-                          // ===== Dòng 3: Instructions =====
-                          Text(
-                            item['instructions'] ?? 'No instruction',
-                            style: TextStyle(
-                              color: Colors.grey[700],
-                              fontStyle: FontStyle.italic,
-                            ),
+                        // ===== Dòng 3: Instructions =====
+                        Text(
+                          item['instructions'] ?? 'Chưa có hướng dẫn sử dụng',
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontStyle: FontStyle.italic,
                           ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
+            ),
 
               const SizedBox(height: 20),
 
-              // ===== Doctor Notes =====
-              const Text(
-                'Ghi chú của bác sĩ',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D3748),
+            // ===== Doctor Notes =====
+            const Text(
+              'Dặn dò của bác sĩ',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2D3748),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.amber[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber[200]!),
+              ),
+              child: Text(
+                doctorNote ?? 'Không có hướng dẫn',
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: Color(0xFF744210),
+                  fontStyle: FontStyle.italic,
                 ),
               ),
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.amber[50],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.amber[200]!),
-                ),
-                child: Text(
-                  doctorNote ?? 'Không có ghi chú',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: Color(0xFF744210),
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ),
+            ),
 
               const SizedBox(height: 30),
 
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    // Push sang trang edit
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => DoctorRecordDetailEdit(recordId: widget.recordId),
-                      ),
-                    );
-                    if (result == true) {
-                      setState(() {
-                        isLoading = true;
-                      });
-                      await _loadRecordDetail();
-                    }
-                  },
-                  icon: const Icon(Icons.edit),
-                  label: const Text('Chỉnh sửa bệnh án'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3182CE),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  // Push sang trang edit
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DoctorRecordDetailEdit(recordId: widget.recordId),
                     ),
+                  );
+                  if (result == true) {
+                    setState(() {
+                      isLoading = true;
+                    });
+                    await _loadRecordDetail();
+                  }
+                },
+                icon: const Icon(Icons.edit),
+                label: const Text('Chỉnh sửa'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF3182CE),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
               ),
+            ),
 
             ],
           ),

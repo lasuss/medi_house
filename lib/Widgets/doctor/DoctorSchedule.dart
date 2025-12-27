@@ -27,7 +27,7 @@ class _DoctorScheduleState extends State<DoctorSchedule>
     super.dispose();
   }
 
-  Stream<List<Map<String, dynamic>>> _getAppointmentsStream() {
+  Stream<List<Map<String, dynamic>>> _getAppointmentsStream() { // Lấy dữ liệu lịch hẹn theo doctor_id
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) return const Stream.empty();
 
@@ -36,33 +36,21 @@ class _DoctorScheduleState extends State<DoctorSchedule>
         .stream(primaryKey: ['id'])
         .eq('doctor_id', userId)
         .order('date', ascending: true)
-        .map((data) => data); // We will enrich/filter locally or fetching joined data is harder with stream
-    
-    // Note: Supabase stream doesn't support deep joins easily. 
-    // We might need to fetch user details separately or use a FutureBuilder if we want joins.
-    // For now, let's use Stream for reactivity and fetch user names if needed, 
-    // OR just use a FutureBuilder with .select('*, patient:patient_id(name, avatar_url)') which is better.
-    // Let's switch to StreamBuilder with a .select query? No, .asStream()
-    
-    // Better approach for Joins + Realtime:
-    // 1. Listen to table changes. 2. Fetch full data on change.
-    // For simplicity in this demo, let's use Stream containing just the basic info 
-    // and maybe we assume we can't easily get the name without a separate fetch 
-    // OR we switch to FutureBuilder and pull-to-refresh.
-    // User expects "real data". 
-    // Let's use StreamBuilder but do the fetch inside.
+        .map((data) => data);
+
+    // NOTE: Supabase Stream không hỗ trợ join nhiều bảng (deep join) một cách ổn định. Nếu cần join (ví dụ lấy thông tin user), có thể phải fetch riêng bằng FutureBuilder.
+    // Có thể dùng:
+    // - Stream để lấy dữ liệu realtime
+    // - Sau đó fetch thêm thông tin chi tiết (user, profile, ...)
+    // Hoặc dùng FutureBuilder với .select('*, patient:patient_id(name, avatar_url)')
+
+    // Cách tốt hơn khi cần realtime + join:
+    // 1. Lắng nghe thay đổi của bảng chính bằng Stream
+    // 2. Khi có thay đổi → fetch dữ liệu chi tiết bằng Future
   }
-  
-  // Actually, for "Join" support with Realtime, it's best to use a plain Stream of the table 
-  // and then a Future to fetch details, OR just use FutureBuilder with a periodic refresh or manual refresh.
-  // Given the complexity, let's use a Stream of the query.
-  // Supabase Flutter SDK v2 supports .stream() but joins are limited.
-  // Let's try to just fetch "notes" which contains "Bệnh nhân: Name". 
-  // I saved "Bệnh nhân: $profileName" in notes in PatientBooking.dart! 
-  // So I can parse that or just display "notes". Perfect fallback.
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) { // Hiển thị lịch hẹn theo tab
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       body: Column(
@@ -101,7 +89,7 @@ class _DoctorScheduleState extends State<DoctorSchedule>
                  final allAppointments = snapshot.data ?? [];
                  
                  // Filter
-                 final upcoming = allAppointments.where((a) => 
+                 final upcoming = allAppointments.where((a) =>
                      a['type'] != 'meeting' && 
                      (a['status'] == 'Pending' || a['status'] == 'Confirmed')
                  ).toList();
