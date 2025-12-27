@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:medi_house/Widgets/doctor/DoctorRecordDetailEdit.dart';
 
 
-class DoctorRecordDetail extends StatefulWidget {
+class DoctorRecordDetail extends StatefulWidget { //Hiển thị chi tiết record
   const DoctorRecordDetail({
     Key? key,
     this.title,
@@ -18,7 +18,7 @@ class DoctorRecordDetail extends StatefulWidget {
   State<DoctorRecordDetail> createState() => _DoctorRecordDetailState();
 }
 
-class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
+class _DoctorRecordDetailState extends State<DoctorRecordDetail> { //State của DoctorRecordDetail
   final supabase = Supabase.instance.client;
 
   bool isLoading = true;
@@ -34,7 +34,7 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
     _loadRecordDetail();
   }
 
-  Future<void> _loadRecordDetail() async {
+  Future<void> _loadRecordDetail() async { //Hàm tải chi tiết record
     try {
       // ===== RECORD + PATIENT =====
       final recordRes = await supabase
@@ -54,7 +54,7 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
           .single();
 
       // ===== PRESCRIPTION + ITEMS =====
-      final prescriptionRes = await supabase
+      final prescriptionRes = await supabase //Lấy thông tin đơn thuốc
           .from('prescriptions')
           .select('''
             prescription_items (
@@ -70,7 +70,7 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
           .eq('record_id', widget.recordId)
           .maybeSingle();
 
-      setState(() {
+      setState(() { //Cập nhật state
         record = recordRes;
         patient = recordRes['patient'];
         doctorNote = recordRes['notes'];
@@ -86,7 +86,7 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) { //Hàm chính để dựng giao diện
     if (isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -102,7 +102,7 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
         title: Text(
-          widget.title ?? 'Record Detail',
+          widget.title ?? 'Chi tiết hồ sơ',
           style: const TextStyle(
             color: Color(0xFF2D3748),
             fontWeight: FontWeight.bold,
@@ -239,7 +239,7 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
               child: prescriptionItems.isEmpty
                   ? const Padding(
                 padding: EdgeInsets.all(16),
-                child: Text('No prescription'),
+                child: Text('Không có đơn thuốc'),
               )
                   : ListView.separated(
                 shrinkWrap: true,
@@ -294,7 +294,7 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
 
                         // ===== Dòng 3: Instructions =====
                         Text(
-                          item['instructions'] ?? 'No instruction',
+                          item['instructions'] ?? 'Chưa có hướng dẫn sử dụng',
                           style: TextStyle(
                             color: Colors.grey[700],
                             fontStyle: FontStyle.italic,
@@ -311,7 +311,7 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
 
             // ===== Doctor Notes =====
             const Text(
-              'Doctor Notes',
+              'Dặn dò của bác sĩ',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -327,7 +327,7 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
                 border: Border.all(color: Colors.amber[200]!),
               ),
               child: Text(
-                doctorNote ?? 'No instruction',
+                doctorNote ?? 'Không có hướng dẫn',
                 style: const TextStyle(
                   fontSize: 15,
                   color: Color(0xFF744210),
@@ -358,7 +358,7 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> {
                   }
                 },
                 icon: const Icon(Icons.edit),
-                label: const Text('Edit Record'),
+                label: const Text('Chỉnh sửa'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF3182CE),
                   foregroundColor: Colors.white,

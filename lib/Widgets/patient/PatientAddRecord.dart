@@ -36,11 +36,11 @@ class _PatientAddRecordState extends State<PatientAddRecord> {
     super.dispose();
   }
 
-  Future<void> _fetchDoctors() async {
+  Future<void> _fetchDoctors() async { // Lấy danh sách bác sĩ
     try {
       final response = await supabase
           .from('users')
-          .select('id, name, email') // Using 'name' based on previous fix
+          .select('id, name, email')
           .eq('role', 'doctor');
       
       if (mounted) {
@@ -52,21 +52,22 @@ class _PatientAddRecordState extends State<PatientAddRecord> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading doctors: $e')),
+          SnackBar(content: Text('Lỗi khi tải danh sách bác sĩ: $e')),
         );
         setState(() => _loading = false);
       }
     }
   }
 
-  Future<void> _submitRecord() async {
+  Future<void> _submitRecord() async { //Gửi yêu cầu khám bệnh
     if (!_formKey.currentState!.validate()) return;
     String? targetDoctorId = _selectedDoctorId;
 
+    // Chọn bác sĩ ngẫu nhiên nếu bật chế độ random
     if (_randomDoctor) {
       if (_doctors.isEmpty) {
          ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No doctors available for random selection.')),
+          const SnackBar(content: Text('Không có bác sĩ để chọn ngẫu nhiên.')),
         );
         return;
       }
@@ -76,7 +77,7 @@ class _PatientAddRecordState extends State<PatientAddRecord> {
 
     if (targetDoctorId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a doctor or enable random selection.')),
+        const SnackBar(content: Text('Vui lòng chọn bác sĩ hoặc bật chọn ngẫu nhiên.')),
       );
       return;
     }
@@ -90,20 +91,20 @@ class _PatientAddRecordState extends State<PatientAddRecord> {
         'patient_id': userId,
         'doctor_id': targetDoctorId,
         'symptoms': _symptomsController.text.trim(),
-        'notes': _notesController.text.trim(), // Assuming 'notes' column exists for patient notes or context
+        'notes': _notesController.text.trim(),
         'status': 'Pending',
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Record submitted successfully!')),
+          const SnackBar(content: Text('Gửi hồ sơ thành công!')),
         );
         context.pop(); // Go back to dashboard
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error submitting record: $e')),
+          SnackBar(content: Text('Lỗi khi gửi hồ sơ: $e')),
         );
       }
     } finally {
@@ -116,7 +117,7 @@ class _PatientAddRecordState extends State<PatientAddRecord> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: const Text('Create New Record', style: TextStyle(color: Colors.black)),
+        title: const Text('Tạo hồ sơ khám bệnh', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         elevation: 1,
         iconTheme: const IconThemeData(color: Colors.black),
@@ -131,7 +132,7 @@ class _PatientAddRecordState extends State<PatientAddRecord> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Describe your condition',
+                      'Mô tả tình trạng của bạn',
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
@@ -139,7 +140,7 @@ class _PatientAddRecordState extends State<PatientAddRecord> {
                       controller: _symptomsController,
                       maxLines: 4,
                       decoration: InputDecoration(
-                        hintText: 'Describe your symptoms, pain levels, duration...',
+                        hintText: 'Mô tả triệu chứng, mức độ đau, thời gian bệnh...',
                         filled: true,
                         fillColor: Colors.white,
                         border: OutlineInputBorder(
@@ -148,14 +149,14 @@ class _PatientAddRecordState extends State<PatientAddRecord> {
                         ),
                       ),
                       validator: (value) => 
-                        value == null || value.isEmpty ? 'Please enter your symptoms' : null,
+                        value == null || value.isEmpty ? 'Vui lòng nhập triệu chứng' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _notesController,
                       maxLines: 2,
                       decoration: InputDecoration(
-                        hintText: 'Additional notes (optional)',
+                        hintText: 'Ghi chú thêm (không bắt buộc)',
                         filled: true,
                         fillColor: Colors.white,
                         border: OutlineInputBorder(
@@ -167,7 +168,7 @@ class _PatientAddRecordState extends State<PatientAddRecord> {
                     const SizedBox(height: 24),
                     
                     const Text(
-                      'Select Doctor',
+                      'Chọn bác sĩ',
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 12),
@@ -181,8 +182,8 @@ class _PatientAddRecordState extends State<PatientAddRecord> {
                       child: Column(
                         children: [
                           SwitchListTile(
-                            title: const Text('Assign Random Doctor'),
-                            subtitle: const Text('We will find a suitable doctor for you'),
+                            title: const Text('Chọn bác sĩ ngẫu nhiên'),
+                            subtitle: const Text('Hệ thống sẽ tự động chọn bác sĩ phù hợp'),
                             value: _randomDoctor,
                             activeColor: Colors.blue,
                             onChanged: (bool value) {
@@ -197,7 +198,7 @@ class _PatientAddRecordState extends State<PatientAddRecord> {
                             DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 isExpanded: true,
-                                hint: const Text('Choose a doctor'),
+                                hint: const Text('Chọn bác sĩ'),
                                 value: _selectedDoctorId,
                                 items: _doctors.map((doctor) {
                                   return DropdownMenuItem<String>(
@@ -232,7 +233,7 @@ class _PatientAddRecordState extends State<PatientAddRecord> {
                         child: _submitting 
                           ? const CircularProgressIndicator(color: Colors.white)
                           : const Text(
-                              'Submit Record',
+                              'Gửi yêu cầu',
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                             ),
                       ),

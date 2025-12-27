@@ -5,9 +5,9 @@ class Appointment {
   final DateTime? date;
   final String? status;
 
-  Appointment({required this.id, this.patientId, this.doctorId, this.date, this.status});
+  Appointment({required this.id, this.patientId, this.doctorId, this.date, this.status}); //Constructor khởi tạo đối tượng Appointment
 
-  factory Appointment.fromJson(Map<String, dynamic> json) {
+  factory Appointment.fromJson(Map<String, dynamic> json) { //Factory constructor dùng để chuyển dữ liệu từ JSON sang object Appointment
     return Appointment(
       id: json['id'],
       patientId: json['patient_id'],

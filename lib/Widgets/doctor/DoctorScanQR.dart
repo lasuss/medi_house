@@ -14,7 +14,7 @@ class _DoctorScanQRState extends State<DoctorScanQR> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Scan QR Code', style: TextStyle(color: Colors.white)),
+        title: const Text('Quét mã QR', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
@@ -89,7 +89,7 @@ class _DoctorScanQRState extends State<DoctorScanQR> {
                 borderRadius: BorderRadius.circular(30),
               ),
               child: const Text(
-                'Align QR code within the frame to scan',
+                'Căn chỉnh mã QR sao cho nằm trong khung để quét',
                 style: TextStyle(color: Colors.white),
               ),
             ),

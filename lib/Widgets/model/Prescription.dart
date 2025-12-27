@@ -20,7 +20,7 @@ class PrescriptionItem {
     this.medicine,
   });
 
-  factory PrescriptionItem.fromJson(Map<String, dynamic> json) {
+  factory PrescriptionItem.fromJson(Map<String, dynamic> json) { //Factory constructor dùng để chuyển dữ liệu từ JSON sang object PrescriptionItem
     return PrescriptionItem(
       id: json['id'] ?? '',
       prescriptionId: json['prescription_id'] ?? '',
@@ -56,12 +56,12 @@ class Prescription {
   });
   
   
-  factory Prescription.fromJson(Map<String, dynamic> json) {
+  factory Prescription.fromJson(Map<String, dynamic> json) { //Factory constructor dùng để chuyển dữ liệu từ JSON sang object Prescription
     return Prescription(
-      id: json['id'] ?? '', // Handle potential null ID if join weirdness (unlikely but safe)
+      id: json['id'] ?? '', // Xử lý trường hợp ID có thể bị null nếu xảy ra lỗi khi kết nối
       doctorId: json['doctor_id'],
       patientId: json['patient_id'],
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(), // Handle null date
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
       doctorName: json['doctors']?['name'],
       patientName: json['patients']?['name'],
       status: json['status'] ?? 'Pending', 

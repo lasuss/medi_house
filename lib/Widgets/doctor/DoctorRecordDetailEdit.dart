@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:medi_house/helpers/UserManager.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class DoctorRecordDetailEdit extends StatefulWidget {
+class DoctorRecordDetailEdit extends StatefulWidget { //Hiển thị chi tiết record để edit
   final String recordId;
 
   const DoctorRecordDetailEdit({Key? key, required this.recordId}) : super(key: key);
@@ -37,7 +37,7 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
     _loadData();
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadData() async { //Hàm tải dữ liệu
     try {
       // 1. Load Record
       final recordRes = await supabase
@@ -113,7 +113,7 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
     }
   }
 
-  void _addOrUpdateMedicineItem(Map<String, dynamic> item) {
+  void _addOrUpdateMedicineItem(Map<String, dynamic> item) { //Hàm thêm hoặc cập nhật đơn thuốc
     setState(() {
       // Check if exists
       final index = prescribedItems.indexWhere((element) => element['medicine_id'] == item['medicine_id']);
@@ -125,13 +125,13 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
     });
   }
 
-  void _removeMedicineItem(int index) {
+  void _removeMedicineItem(int index) { //Hàm xóa đơn thuốc
     setState(() {
       prescribedItems.removeAt(index);
     });
   }
 
-  void _showAddMedicineDialog() {
+  void _showAddMedicineDialog() { //Hàm hiển thị dialog thêm đơn thuốc
     String? selectedMedicineId;
     Map<String, dynamic>? selectedMedicine;
     
@@ -144,7 +144,7 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              title: const Text('Add Medicine'),
+              title: const Text('Thêm thuốc'),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -172,8 +172,8 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
                           controller: textEditingController,
                           focusNode: focusNode,
                           decoration: InputDecoration(
-                            labelText: 'Search Medicine',
-                            hintText: 'Type to search...',
+                            labelText: 'Tìm kiếm thuốc',
+                            hintText: 'Nhập tên thuốc...',
                             suffixIcon: const Icon(Icons.search),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                           ),
@@ -213,13 +213,13 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
                     const SizedBox(height: 10),
                     TextField(
                       controller: qtyController,
-                      decoration: const InputDecoration(labelText: 'Quantity', hintText: 'e.g., 10'),
+                      decoration: const InputDecoration(labelText: 'Số lượng', hintText: 'e.g., 10'),
                       keyboardType: TextInputType.number,
                     ),
                     const SizedBox(height: 10),
                     TextField(
                       controller: instrController,
-                      decoration: const InputDecoration(labelText: 'Instructions', hintText: 'e.g., Uống sau ăn (After meals)'),
+                      decoration: const InputDecoration(labelText: 'Hướng dẫn sử dụng', hintText: 'e.g., Uống sau ăn (After meals)'),
                       maxLines: 2,
                     ),
                   ],
@@ -228,7 +228,7 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: const Text('Hủy'),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -244,7 +244,7 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
                       Navigator.pop(context);
                     }
                   },
-                  child: const Text('Add'),
+                  child: const Text('Thêm'),
                 ),
               ],
             );
@@ -313,16 +313,16 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Record & Prescription saved successfully!')),
+          const SnackBar(content: Text('Hồ sơ và đơn thuốc đã được lưu thành công!')),
         );
         Navigator.pop(context, true);
       }
       
     } catch (e) {
-      debugPrint('Error saving record: $e');
+      debugPrint('Lỗi cập nhật hồ sơ: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update record')),
+          const SnackBar(content: Text('Không thể cập nhật hồ sơ.')),
         );
       }
     } finally {
@@ -339,7 +339,7 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) { //Hàm chính để dựng giao diện
     if (isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -353,7 +353,7 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Record'),
+        title: const Text('Chỉnh sửa hồ sơ'),
         backgroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Color(0xFF2D3748)),
         elevation: 0,
@@ -414,11 +414,11 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
             const SizedBox(height: 20),
 
             // ===== Symptoms & Diagnosis =====
-            _buildTextField(symptomsController, 'Symptoms'),
+            _buildTextField(symptomsController, 'Triệu chứng (Symptoms)'),
             const SizedBox(height: 16),
-            _buildTextField(diagnosisController, 'Diagnosis'),
+            _buildTextField(diagnosisController, 'Chẩn đoán (Diagnosis)'),
             const SizedBox(height: 16),
-            _buildTextField(doctorNoteController, 'Doctor Notes / General Instructions'),
+            _buildTextField(doctorNoteController, 'Ghi chú của bác sĩ / Hướng dẫn chung'),
             const SizedBox(height: 20),
 
             // ===== Prescription Section (NEW) =====
@@ -426,13 +426,13 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Prescription',
+                  'Đơn thuốc',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF2D3748)),
                 ),
                 TextButton.icon(
                     onPressed: _showAddMedicineDialog,
                     icon: const Icon(Icons.add_circle, color: Colors.blue),
-                    label: const Text('Add Medicine', style: TextStyle(color: Colors.blue)),
+                    label: const Text('Thêm thuốc', style: TextStyle(color: Colors.blue)),
                 )
               ],
             ),
@@ -446,7 +446,7 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
               child: prescribedItems.isEmpty
                   ? const Padding(
                       padding: EdgeInsets.all(20),
-                      child: Center(child: Text('No medicines added yet.', style: TextStyle(color: Colors.grey))),
+                      child: Center(child: Text('Chưa có loại thuốc nào được thêm.', style: TextStyle(color: Colors.grey))),
                     )
                   : ListView.separated(
                       shrinkWrap: true,
@@ -486,8 +486,8 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
             DropdownButtonFormField<String>(
               value: status.isNotEmpty ? status[0].toUpperCase() + status.substring(1) : 'Pending',
               items: const [
-                DropdownMenuItem(value: 'Pending', child: Text('Pending')),
-                DropdownMenuItem(value: 'Completed', child: Text('Completed')),
+                DropdownMenuItem(value: 'Pending', child: Text('Chưa giải quyết')),
+                DropdownMenuItem(value: 'Completed', child: Text('Hoàn thành')),
               ],
               onChanged: (val) {
                 if (val != null) setState(() => status = val);
@@ -513,7 +513,7 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
                     ),
                     child: isSaving
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('Save Record', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        : const Text('Lưu hồ sơ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -526,7 +526,7 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
                           borderRadius: BorderRadius.circular(12)),
                       side: BorderSide(color: Colors.grey[400]!),
                     ),
-                    child: Text('Cancel', style: TextStyle(color: Colors.grey[700], fontSize: 16)),
+                    child: Text('Hủy', style: TextStyle(color: Colors.grey[700], fontSize: 16)),
                   ),
                 ),
               ],
