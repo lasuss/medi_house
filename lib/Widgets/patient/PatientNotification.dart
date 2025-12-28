@@ -115,87 +115,119 @@ class _PatientNotificationState extends State<PatientNotification> {
 
   @override
   // Xây dựng giao diện chính của màn hình thông báo
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: SafeArea(
-        child: Column(
-          children: [
-            // Phần header chứa tiêu đề và các tab bộ lọc
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              color: Colors.white,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: StreamBuilder<List<Map<String, dynamic>>>(
+          stream: _getNotificationsStream(),
+          builder: (context, snapshot) {
+            final allNotifications = snapshot.data ?? [];
+            
+            // Calculate unread counts
+            int recordCount = 0;
+            int notifCount = 0;
+            int messageCount = 0;
+
+            for (var notif in allNotifications) {
+              final bool isRead = notif['is_read'] ?? false;
+              if (!isRead) {
+                final type = notif['type'] ?? 'info';
+                if (type == 'record' || type == 'prescription') {
+                  recordCount++;
+                } else if (type == 'message') {
+                  messageCount++;
+                } else if (type == 'info' || type == 'appointment' || type == 'admin' || type == 'system') {
+                  notifCount++;
+                }
+              }
+            }
+
+            return Column(
+              children: [
+                // Phần header chứa tiêu đề và các tab bộ lọc
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  color: Colors.white,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        "Danh sách thông báo",
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Danh sách thông báo",
+                            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
+                          ),
+                          // Nút đánh dấu tất cả đã đọc (ẩn khi đang ở tab Tin tức)
+                          if (_selectedFilter != 'Tin tức')
+                            IconButton(
+                              onPressed: _markAllAsRead,
+                              tooltip: "Đánh dấu tất cả đã đọc",
+                              icon: const Icon(Icons.checklist, color: Colors.blue),
+                            ),
+                        ],
                       ),
-                      // Nút đánh dấu tất cả đã đọc (ẩn khi đang ở tab Tin tức)
-                      if (_selectedFilter != 'Tin tức')
-                        TextButton(
-                          onPressed: _markAllAsRead,
-                          child: const Text("Đánh dấu đã đọc", style: TextStyle(color: Colors.blue)),
+                      const SizedBox(height: 12),
+                      // Các tab bộ lọc (ChoiceChip)
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: _filters.map((filter) {
+                            final isSelected = _selectedFilter == filter;
+                            int count = 0;
+                            if (filter == 'Phiếu khám') count = recordCount;
+                            if (filter == 'Thông báo') count = notifCount;
+                            if (filter == 'Tin nhắn') count = messageCount;
+                            // Tin tức k có count unread từ stream này
+                            
+                            String label = filter;
+                            if (filter != 'Tin tức' && count > 0) {
+                              label = "$filter ($count)";
+                            }
+
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: ChoiceChip(
+                                label: Text(
+                                  label,
+                                  style: TextStyle(
+                                    color: isSelected ? Colors.white : Colors.black87,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  ),
+                                ),
+                                selected: isSelected,
+                                onSelected: (bool selected) {
+                                  if (selected) {
+                                    setState(() {
+                                      _selectedFilter = filter;
+                                    });
+                                  }
+                                },
+                                selectedColor: Colors.blue,
+                                backgroundColor: Colors.grey[200],
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                side: BorderSide.none,
+                                showCheckmark: false,
+                              ),
+                            );
+                          }).toList(),
                         ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  // Các tab bộ lọc (ChoiceChip)
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: _filters.map((filter) {
-                        final isSelected = _selectedFilter == filter;
-                        // Giá trị đếm giả lập để hiển thị (thực tế nên lấy từ stream riêng)
-                        int count = 0;
-                        if (filter == 'Phiếu khám') count = 3;
-                        if (filter == 'Tin tức') count = 4;
-                        if (filter == 'Thông báo') count = 2;
-                        if (filter == 'Tin nhắn') count = 0;
+                ),
 
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: ChoiceChip(
-                            label: Text(
-                              "$filter ($count)",
-                              style: TextStyle(
-                                color: isSelected ? Colors.white : Colors.black87,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              ),
-                            ),
-                            selected: isSelected,
-                            onSelected: (bool selected) {
-                              if (selected) {
-                                setState(() {
-                                  _selectedFilter = filter;
-                                });
-                              }
-                            },
-                            selectedColor: Colors.blue,
-                            backgroundColor: Colors.grey[200],
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            side: BorderSide.none,
-                            showCheckmark: false,
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Phần nội dung chính: hiển thị tin tức hoặc thông báo tùy tab
-            Expanded(
-              child: _selectedFilter == 'Tin tức'
-                  ? _buildNewsList()
-                  : _buildNotificationList(),
-            ),
-          ],
+                // Phần nội dung chính: hiển thị tin tức hoặc thông báo tùy tab
+                Expanded(
+                  child: _selectedFilter == 'Tin tức'
+                      ? _buildNewsList()
+                      : _buildNotificationList(allNotifications),
+                ),
+              ],
+            );
+          }
         ),
       ),
     );
@@ -257,28 +289,23 @@ class _PatientNotificationState extends State<PatientNotification> {
   }
 
   // Xây dựng danh sách thông báo đã lọc theo tab hiện tại
-  Widget _buildNotificationList() {
-    return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: _getNotificationsStream(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final allNotifications = snapshot.data ?? [];
-        final notifications = allNotifications.where(_filterNotification).toList();
+  Widget _buildNotificationList(List<Map<String, dynamic>> allNotifications) {
+    if (allNotifications.isEmpty && _selectedFilter != 'Tin tức') {
+       // Just in case, though snapshot handles loading state, this runs on every build
+    }
+    
+    final notifications = allNotifications.where(_filterNotification).toList();
 
-        if (notifications.isEmpty) {
-          return _buildEmptyState("Không có thông báo nào");
-        }
+    if (notifications.isEmpty) {
+      return _buildEmptyState("Không có thông báo nào");
+    }
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16.0),
-          itemCount: notifications.length,
-          itemBuilder: (context, index) {
-            final notification = notifications[index];
-            return _buildNotificationItem(context, notification);
-          },
-        );
+    return ListView.builder(
+      padding: const EdgeInsets.all(16.0),
+      itemCount: notifications.length,
+      itemBuilder: (context, index) {
+        final notification = notifications[index];
+        return _buildNotificationItem(context, notification);
       },
     );
   }

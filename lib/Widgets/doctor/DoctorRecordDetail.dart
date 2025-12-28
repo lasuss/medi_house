@@ -45,6 +45,7 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> { //State của
               symptoms,
               notes,
               created_at,
+              triage_data,
               patient:patient_id (
                 id,
                 name
@@ -122,10 +123,22 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> { //State của
       );
     }
 
-      final String patientName =
-      patient?['name'] != null && patient!['name'].toString().isNotEmpty
-          ? patient!['name'].toString()
-          : '-';
+    String patientName = '-';
+    if (record?['triage_data'] != null && record?['triage_data']['profile_name'] != null) {
+      patientName = record!['triage_data']['profile_name'];
+    } else {
+         // Fallback logic
+         final notes = record?['notes']?.toString() ?? '';
+         if (notes.startsWith('Booking Init:')) {
+           final RegExp nameExp = RegExp(r'Bệnh nhân: (.*?)\.');
+           final match = nameExp.firstMatch(notes);
+           if (match != null) {
+             patientName = match.group(1)?.trim() ?? '-';
+           }
+         } else if (patient?['name'] != null) {
+            patientName = patient!['name'].toString();
+         }
+    }
 
       return Scaffold(
         backgroundColor: const Color(0xFFF5F7FA),
@@ -146,71 +159,52 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> { //State của
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ===== Patient Info =====
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.05),
-                      spreadRadius: 2,
-                      blurRadius: 8,
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: Colors.blue[100],
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          patientName[0],
-                          style: TextStyle(
-                            color: Colors.blue[800],
-                            fontWeight: FontWeight.bold,
-                            fontSize: 24,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+            // ===== Patient Info Section (New Separate Field) =====
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.05),
+                    spreadRadius: 2,
+                    blurRadius: 8,
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   Row(
+                    children: const [
+                      Icon(Icons.person_outline, color: Colors.blue),
+                      SizedBox(width: 8),
+                      Text("Thông tin bệnh nhân", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  _buildDetailRow("Họ tên", patientName),
+                  const SizedBox(height: 12),
+                  
+                  if (record?['triage_data'] != null) ...[
+                      Row(
                         children: [
-                          Text(
-                            patientName,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF2D3748),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'ID: ${patient?['id'] ?? '-'}',
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Ngày: ${_formatAppointmentDate(
-                                (record?['appointment'] as List?)?.first
-                            )}',
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
+                           Expanded(child: _buildDetailRow("Tuổi", "${record!['triage_data']['age'] ?? '-'} tuổi")),
+                           Expanded(child: _buildDetailRow("Giới tính", "${record!['triage_data']['gender'] ?? '-'}")),
                         ],
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(height: 12),
+                      _buildDetailRow("Địa chỉ", "${record!['triage_data']['address'] ?? '-'}"),
+                  ] else ...[
+                       _buildDetailRow("ID Bệnh nhân", "${patient?['id'] ?? '-'}"),
+                  ]
+                ],
               ),
+            ),
+            
+            const SizedBox(height: 20),
 
               const SizedBox(height: 20),
 
@@ -405,4 +399,29 @@ class _DoctorRecordDetailState extends State<DoctorRecordDetail> { //State của
         ),
       );
     }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: TextStyle(
+            color: Colors.grey[600],
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF2D3748),
+          ),
+        ),
+      ],
+    );
   }
+}

@@ -73,6 +73,16 @@ class _PharmacyPendingState extends State<PharmacyPending> {
       // 2. Cập nhật trạng thái đơn thuốc thành Đã cấp (Filled)
       await _supabase.from('prescriptions').update({'status': 'Filled'}).eq('id', prescription.id);
 
+      // 3. Cập nhật trạng thái hồ sơ bệnh án thành Hoàn thành (Completed) nếu có recordId
+      if (prescription.recordId != null) {
+         await _supabase.from('records').update({'status': 'Completed'}).eq('id', prescription.recordId!);
+         
+         // 4. Cũng cập nhật trạng thái lịch hẹn thành Hoàn thành (Completed)
+         try {
+           await _supabase.from('appointments').update({'status': 'Completed'}).eq('record_id', prescription.recordId!);
+         } catch (_) {}
+      }
+
       if (mounted) {
         // Safe UI feedback
         WidgetsBinding.instance.addPostFrameCallback((_) {

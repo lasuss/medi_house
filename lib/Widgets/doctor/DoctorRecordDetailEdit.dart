@@ -31,6 +31,8 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
   List<Map<String, dynamic>> availableMedicines = [];
   List<Map<String, dynamic>> prescribedItems = []; // {medicine_id, medicine_name, unit, quantity, instructions}
 
+  Map<String, dynamic>? pendingTriageUpdate; // Store extracted data to save later
+  
   @override
   void initState() {
     super.initState();
@@ -48,6 +50,7 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
             diagnosis,
             status,
             notes,
+            triage_data,
             patient:patient_id (
               id,
               name
@@ -90,6 +93,26 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
             'instructions': item['instructions'] ?? '',
           });
         }
+      }
+      
+      // Auto-migrate: If triage_data is missing but notes contain info
+      if (recordRes['triage_data'] == null && recordRes['notes'] != null) {
+          final notes = recordRes['notes'].toString();
+          if (notes.startsWith('Booking Init:')) {
+             final RegExp nameExp = RegExp(r'Bệnh nhân: (.*?)\.');
+             final match = nameExp.firstMatch(notes);
+             if (match != null) {
+               final name = match.group(1)?.trim();
+               if (name != null) {
+                 pendingTriageUpdate = {
+                   'profile_name': name,
+                   'age': 0, // Fallback
+                   'gender': 'Unknown',
+                   'address': 'From legacy notes',
+                 };
+               }
+             }
+          }
       }
 
       if (mounted) {
@@ -262,13 +285,31 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
       final doctorId = UserManager.instance.supabaseUser?.id;
 
       // 1. Update Record
-      await supabase.from('records').update({
+      final Map<String, dynamic> updateData = {
         'symptoms': symptomsController.text,
         'diagnosis': diagnosisController.text,
         'status': status,
         'notes': doctorNoteController.text,
         'doctor_id': doctorId,
-      }).eq('id', widget.recordId);
+      };
+
+      // If we have migrated data, save it to ensure persistent name even if notes change
+      if (pendingTriageUpdate != null) {
+        updateData['triage_data'] = pendingTriageUpdate;
+      }
+
+      await supabase.from('records').update(updateData).eq('id', widget.recordId);
+
+      // 1.1 Sync Appointment Status
+      // When record is Completed or Prescribed, the Appointment should be considered Completed
+      if (status == 'Completed' || status == 'Prescribed') {
+        try {
+          await supabase
+              .from('appointments')
+              .update({'status': 'Completed'})
+              .eq('record_id', widget.recordId);
+        } catch (_) {} 
+      }
 
 
       // 2. Handle Prescription
@@ -346,10 +387,12 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
       );
     }
 
-    final String patientName =
-    patient?['name'] != null && patient!['name'].toString().isNotEmpty
-        ? patient!['name'].toString()
-        : '-';
+    String patientName = '-';
+    if (record?['triage_data'] != null && record?['triage_data']['profile_name'] != null) {
+      patientName = record!['triage_data']['profile_name'];
+    } else if (patient?['name'] != null) {
+      patientName = patient!['name'].toString();
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -377,13 +420,15 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
                   ),
                 ],
               ),
+
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   CircleAvatar(
                     radius: 30,
                     backgroundColor: Colors.blue[100],
                     child: Text(
-                      patientName[0],
+                      (patientName.isNotEmpty) ? patientName[0].toUpperCase() : '?',
                       style: TextStyle(
                         color: Colors.blue[800],
                         fontWeight: FontWeight.bold,
@@ -392,21 +437,46 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        patientName,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2D3748),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          patientName,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2D3748),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text('ID: ${patient?['id'] ?? '-'}',
-                          style: TextStyle(color: Colors.grey[600])),
-                    ],
+                        const SizedBox(height: 4),
+                        
+                        // Show Age/Gender if available
+                        if (record?['triage_data'] != null) ...[
+                             Text(
+                                '${record!['triage_data']['gender'] ?? 'N/A'} • ${record!['triage_data']['age'] ?? 0} tuổi',
+                                style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w500)
+                             ),
+                             const SizedBox(height: 2),
+                             Row(
+                               children: [
+                                 const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                                 const SizedBox(width: 4),
+                                 Expanded(
+                                   child: Text(
+                                     record!['triage_data']['address'] ?? 'Chưa cập nhật địa chỉ',
+                                     style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                                     maxLines: 2, overflow: TextOverflow.ellipsis,
+                                   ),
+                                 ),
+                               ],
+                             )
+                        ] else ...[
+                           Text('ID Account: ${patient?['id'] ?? '-'}',
+                            style: TextStyle(color: Colors.grey[600])),
+                        ]
+                      ],
+                    ),
                   )
                 ],
               ),
@@ -487,6 +557,7 @@ class _DoctorRecordDetailEditState extends State<DoctorRecordDetailEdit> {
               value: status.isNotEmpty ? status[0].toUpperCase() + status.substring(1) : 'Pending',
               items: const [
                 DropdownMenuItem(value: 'Pending', child: Text('Chưa giải quyết')),
+                DropdownMenuItem(value: 'Prescribed', child: Text('Yêu cầu cấp thuốc')),
                 DropdownMenuItem(value: 'Completed', child: Text('Hoàn thành')),
               ],
               onChanged: (val) {

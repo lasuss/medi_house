@@ -150,28 +150,33 @@ class _PatientDashboardState extends State<PatientDashboard> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Xin chào,',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Xin chào,',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              _patientName,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2D3748),
+              const SizedBox(height: 4),
+              Text(
+                _patientName,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2D3748),
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+        const SizedBox(width: 16),
         CircleAvatar(
           radius: 24,
           backgroundColor: Colors.blue[100],
@@ -181,13 +186,13 @@ class _PatientDashboardState extends State<PatientDashboard> {
           child: _avatarUrl != null && _avatarUrl!.isNotEmpty
               ? null
               : Text(
-            _patientName.isNotEmpty ? _patientName[0].toUpperCase() : '?',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.blue[800],
-            ),
-          ),
+                  _patientName.isNotEmpty ? _patientName[0].toUpperCase() : '?',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue[800],
+                  ),
+                ),
         ),
       ],
     );
@@ -382,40 +387,41 @@ class _PatientDashboardState extends State<PatientDashboard> {
                         children: [
                           Row(
                             children: [
-                              Text(
-                                typeDisplay,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Color(0xFF2D3748),
+                              Flexible(
+                                child: Text(
+                                  typeDisplay,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: Color(0xFF2D3748),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              // Hiển thị badge "Hoàn thành" nếu trạng thái Completed
-                              if (record['status'] == 'Completed') ...[
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green[50],
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(color: Colors.green.withOpacity(0.3)),
+                              // Hiển thị badge trạng thái
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: record['status'] == 'Completed' ? Colors.green[50] :
+                                         record['status'] == 'Prescribed' ? Colors.purple[50] : Colors.orange[50],
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(
+                                      color: record['status'] == 'Completed' ? Colors.green.withOpacity(0.3) :
+                                             record['status'] == 'Prescribed' ? Colors.purple.withOpacity(0.3) : Colors.orange.withOpacity(0.3)
                                   ),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.check_circle, size: 12, color: Colors.green[700]),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        "Hoàn thành",
-                                        style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.green[700]
-                                        ),
-                                      ),
-                                    ],
+                                ),
+                                child: Text(
+                                  record['status'] == 'Completed' ? "Hoàn thành" :
+                                  record['status'] == 'Prescribed' ? "Chờ cấp thuốc" : "Chưa giải quyết",
+                                  style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: record['status'] == 'Completed' ? Colors.green[700] :
+                                             record['status'] == 'Prescribed' ? Colors.purple[700] : Colors.orange[700]
                                   ),
-                                )
-                              ]
+                                ),
+                              )
                             ],
                           ),
                           const SizedBox(height: 4),

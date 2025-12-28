@@ -41,6 +41,7 @@ class Prescription {
   final String? doctorName; 
   final String? patientName;
   final String? status;
+  final String? recordId;
   
   final List<PrescriptionItem> items;
 
@@ -52,6 +53,7 @@ class Prescription {
     this.doctorName,
     this.patientName,
     this.status,
+    this.recordId,
     this.items = const [],
   });
   
@@ -61,6 +63,7 @@ class Prescription {
       id: json['id'] ?? '', // Xử lý trường hợp ID có thể bị null nếu xảy ra lỗi khi kết nối
       doctorId: json['doctor_id'],
       patientId: json['patient_id'],
+      recordId: json['record_id'],
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
       doctorName: json['doctors']?['name'],
       patientName: json['patients']?['name'],

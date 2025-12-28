@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:medi_house/enroll/UserRole.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Lớp để chứa thông tin cho mỗi mục điều hướng.
 class NavigationItemConfig {
@@ -74,6 +75,58 @@ class BottomNavigation extends StatelessWidget {
       },
 
       items: navItems.map((item) {
+        // Kiểm tra nếu là tab thông báo thì hiển thị badge
+        if (item.route.endsWith('/notifications')) {
+          return BottomNavigationBarItem(
+            icon: StreamBuilder<List<Map<String, dynamic>>>(
+              stream: Supabase.instance.client
+                  .from('notifications')
+                  .stream(primaryKey: ['id'])
+                  .eq('is_read', false)
+                  .order('created_at', ascending: false)
+                  .map((data) => data.map((json) => json).toList()),
+              builder: (context, snapshot) {
+                int unreadCount = 0;
+                if (snapshot.hasData) {
+                  unreadCount = snapshot.data!.length;
+                }
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    FaIcon(item.icon, size: 20),
+                    if (unreadCount > 0)
+                      Positioned(
+                        right: -4,
+                        top: -4,
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 14,
+                            minHeight: 14,
+                          ),
+                          child: Text(
+                            '$unreadCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+            label: item.label,
+          );
+        }
+
         return BottomNavigationBarItem(
           icon: FaIcon(item.icon, size: 20),
           label: item.label,

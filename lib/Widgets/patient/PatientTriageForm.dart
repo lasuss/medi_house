@@ -109,6 +109,17 @@ class _PatientTriageFormState extends State<PatientTriageForm> {
           .map((e) => e.key)
           .toList();
 
+      String fullAddress = 'Không rõ';
+      if (_selectedProfile != null) {
+         final addrParts = [
+           _selectedProfile!['address_street'],
+           _selectedProfile!['address_ward'],
+           _selectedProfile!['address_district'],
+           _selectedProfile!['address_province']
+         ].where((s) => s != null && s.toString().isNotEmpty).join(', ');
+         if (addrParts.isNotEmpty) fullAddress = addrParts;
+      }
+
       final triageData = {
         'profile_name': profileName,
         'main_symptoms': _symptomsController.text,
@@ -116,6 +127,7 @@ class _PatientTriageFormState extends State<PatientTriageForm> {
         'severity': _severity.round(),
         'age': age,
         'gender': gender,
+        'address': fullAddress,
         'dangerous_signs': dangerousSignsSelected,
         'requested_date': DateFormat('yyyy-MM-dd').format(_selectedDate),
         'requested_time': _selectedTime,

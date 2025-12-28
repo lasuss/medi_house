@@ -105,7 +105,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A192F), // Dark blue background
+      backgroundColor: const Color(0xFFF5F7FA), // Light background
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 48.0),
@@ -121,16 +121,16 @@ class _RegisterPageState extends State<RegisterPage> {
                   'Đăng Ký Tài Khoản',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFF2D3748),
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Tạo tài khoản mới để bắt đầu',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 16),
                 ),
                 const SizedBox(height: 40),
 
@@ -198,18 +198,20 @@ class _RegisterPageState extends State<RegisterPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.grey)),
+        Text(label, style: const TextStyle(color: Color(0xFF2D3748), fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
           obscureText: isPassword && !_isPasswordVisible,
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: Colors.black87),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: Colors.grey.shade600),
+            hintStyle: TextStyle(color: Colors.grey.shade400),
             filled: true,
-            fillColor: const Color(0xFF172A46),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+            fillColor: Colors.white,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.blue)),
             suffixIcon: isPassword
                 ? IconButton(
                     icon: Icon(_isPasswordVisible ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: Colors.grey),
@@ -226,17 +228,19 @@ class _RegisterPageState extends State<RegisterPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Giới tính', style: TextStyle(color: Colors.grey)),
+        const Text('Giới tính', style: TextStyle(color: Color(0xFF2D3748), fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           value: _selectedGender,
-          hint: const Text('Chọn giới tính', style: TextStyle(color: Colors.white70)),
-          dropdownColor: const Color(0xFF172A46),
-          style: const TextStyle(color: Colors.white),
+          hint: const Text('Chọn giới tính', style: TextStyle(color: Colors.black54)),
+          dropdownColor: Colors.white,
+          style: const TextStyle(color: Colors.black87),
           decoration: InputDecoration(
             filled: true,
-            fillColor: const Color(0xFF172A46),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+            fillColor: Colors.white,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.blue)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
           ),
           items: ['Nam', 'Nữ', 'Khác'].map((String value) {
@@ -261,10 +265,10 @@ class _RegisterPageState extends State<RegisterPage> {
       child: OutlinedButton.icon(
         onPressed: () => setState(() => _selectedRole = role),
         icon: FaIcon(icon, color: isSelected ? Colors.white : Colors.blue, size: 18),
-        label: Text(text, style: TextStyle(color: isSelected ? Colors.white : Colors.white70)),
+        label: Text(text, style: TextStyle(color: isSelected ? Colors.white : Colors.blue[800])),
         style: OutlinedButton.styleFrom(
-          backgroundColor: isSelected ? Colors.blue : const Color(0xFF172A46),
-          side: BorderSide(color: isSelected ? Colors.blue : const Color(0xFF172A46)),
+          backgroundColor: isSelected ? Colors.blue : Colors.white,
+          side: BorderSide(color: isSelected ? Colors.blue : Colors.blue.withOpacity(0.3)),
           padding: const EdgeInsets.symmetric(vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),

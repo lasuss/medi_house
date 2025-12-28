@@ -36,14 +36,6 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
         .eq('id', doctorId)
         .single();
 
-    final patientRes = await supabase
-        .from('records')
-        .select('patient_id')
-        .eq('doctor_id', doctorId);
-
-    final uniquePatients =
-    patientRes.map((e) => e['patient_id']).toSet();
-
     final pendingRes = await supabase
         .from('records')
         .select('id')
@@ -56,6 +48,8 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
           id,
           created_at,
           status,
+          triage_data,
+          notes,
           patient:patient_id (
             id,
             name
@@ -67,11 +61,39 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
         .eq('doctor_id', doctorId)
         .order('created_at', ascending: false);
 
+    final List<Map<String, dynamic>> processedRecords = List<Map<String, dynamic>>.from(recordRes);
+    
+    // Calculate unique patients from the loaded records
+    final uniquePatientIds = <String>{};
+    
+    // Pre-calculate display names to avoid expensive Regex in build loop
+    for (var record in processedRecords) {
+      if (record['patient'] != null && record['patient']['id'] != null) {
+        uniquePatientIds.add(record['patient']['id']);
+      }
+
+      String patientName = record['patient']?['name'] ?? 'Bệnh nhân';
+      if (record['triage_data'] != null && record['triage_data']['profile_name'] != null) {
+        patientName = record['triage_data']['profile_name'];
+      } else {
+         // Fallback logic for legacy records
+         final notes = record['notes']?.toString() ?? '';
+         if (notes.startsWith('Booking Init:')) {
+           final RegExp nameExp = RegExp(r'Bệnh nhân: (.*?)\.');
+           final match = nameExp.firstMatch(notes);
+           if (match != null) {
+             patientName = match.group(1)?.trim() ?? patientName;
+           }
+         }
+      }
+      record['display_name'] = patientName;
+    }
+
     setState(() {
       _doctorName = doctorRes['name'] ?? 'Bác sĩ';
-      patientCount = uniquePatients.length;
+      patientCount = uniquePatientIds.length;
       pendingReportCount = pendingRes.length;
-      records = List<Map<String, dynamic>>.from(recordRes);
+      records = processedRecords;
       isLoading = false;
     });
   }
@@ -190,6 +212,21 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
               itemBuilder: (context, index) {
                 final record = records[index];
                 final patient = record['patient'];
+                
+                String patientName = patient?['name'] ?? 'Bệnh nhân';
+                if (record['triage_data'] != null && record['triage_data']['profile_name'] != null) {
+                  patientName = record['triage_data']['profile_name'];
+                } else {
+                   // Fallback logic for legacy records
+                   final notes = record['notes']?.toString() ?? '';
+                   if (notes.startsWith('Booking Init:')) {
+                     final RegExp nameExp = RegExp(r'Bệnh nhân: (.*?)\.');
+                     final match = nameExp.firstMatch(notes);
+                     if (match != null) {
+                       patientName = match.group(1)?.trim() ?? patientName;
+                     }
+                   }
+                }
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
@@ -200,22 +237,47 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.description),
-                      const SizedBox(width: 16),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[50],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(Icons.assignment_ind_rounded, color: Colors.blue),
+                              ),
+                              const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              patient?['name'] ?? 'Bệnh nhân',
+                              patientName,
                               style: const TextStyle(
                                   fontWeight: FontWeight.bold),
                             ),
-                            Text(
-                              'Trạng thái: ${record['status']}',
-                              style: TextStyle(
-                                  color: Colors.grey[600], fontSize: 13),
-                            ),
+                              Container(
+                                margin: const EdgeInsets.only(top: 4, bottom: 4),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: record['status'] == 'Completed' ? Colors.green[50] : 
+                                         record['status'] == 'Prescribed' ? Colors.purple[50] : Colors.orange[50],
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(
+                                    color: record['status'] == 'Completed' ? Colors.green.withOpacity(0.5) : 
+                                           record['status'] == 'Prescribed' ? Colors.purple.withOpacity(0.5) : Colors.orange.withOpacity(0.5)
+                                  ),
+                                ),
+                                child: Text(
+                                  record['status'] == 'Completed' ? 'Hoàn thành' : 
+                                  record['status'] == 'Prescribed' ? 'Yêu cầu cấp thuốc' : 'Chưa giải quyết',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: record['status'] == 'Completed' ? Colors.green[700] : 
+                                           record['status'] == 'Prescribed' ? Colors.purple[700] : Colors.orange[700],
+                                  ),
+                                ),
+                              ),
                             const SizedBox(height: 2),
                             Text(
                               formatVisitTime(record['appointment']),
@@ -228,13 +290,19 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
                           ],
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.more_vert),
-                        onPressed: () {
-                          GoRouter.of(context).push(
-                              '/doctor/records/${record['id']}');
-                        },
-                      ),
+                                            Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
+                                  onPressed: () {
+                                    GoRouter.of(context)
+                                        .push('/doctor/records/${record['id']}');
+                                  },
+                                ),
+                              ),
                     ],
                   ),
                 );
@@ -310,7 +378,21 @@ class DoctorSearchDelegate extends SearchDelegate {
 
   Widget _buildList(BuildContext context) {
     final results = records.where((record) {
-      final patientName = record['patient']?['name']?.toString().toLowerCase() ?? '';
+      String nameToCheck = record['patient']?['name']?.toString() ?? '';
+      if (record['triage_data'] != null && record['triage_data']['profile_name'] != null) {
+         nameToCheck = record['triage_data']['profile_name'];
+      } else {
+          final notes = record['notes']?.toString() ?? '';
+           if (notes.startsWith('Booking Init:')) {
+             final RegExp nameExp = RegExp(r'Bệnh nhân: (.*?)\.');
+             final match = nameExp.firstMatch(notes);
+             if (match != null) {
+               nameToCheck = match.group(1)?.trim() ?? nameToCheck;
+             }
+           }
+      }
+      
+      final patientName = nameToCheck.toLowerCase();
       final status = record['status']?.toString().toLowerCase() ?? '';
       final searchQuery = query.toLowerCase();
 
@@ -321,7 +403,11 @@ class DoctorSearchDelegate extends SearchDelegate {
       itemCount: results.length,
       itemBuilder: (context, index) {
         final record = results[index];
-        final patientName = record['patient']?['name'] ?? 'Bệnh nhân';
+        
+        String patientName = record['patient']?['name'] ?? 'Bệnh nhân';
+        if (record['triage_data'] != null && record['triage_data']['profile_name'] != null) {
+           patientName = record['triage_data']['profile_name'];
+        }
 
         return ListTile(
           leading: const CircleAvatar(child: Icon(Icons.person)),

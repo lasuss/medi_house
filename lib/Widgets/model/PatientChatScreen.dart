@@ -37,7 +37,7 @@ class _PatientChatScreenState extends State<PatientChatScreen> {
     _messagesStream = _supabase
         .from('messages')
         .stream(primaryKey: ['id'])
-        .order('created_at', ascending: true)
+        .order('created_at', ascending: false)
         .map((maps) {
           final messages = maps.map((map) => Message.fromJson(map)).toList();
           // Filter messages between ME and THEM
@@ -77,7 +77,7 @@ class _PatientChatScreenState extends State<PatientChatScreen> {
         title: Row(
           children: [
             CircleAvatar(
-              radius: 16,
+              radius: 16  ,
               backgroundImage: widget.avatarUrl != null ? NetworkImage(widget.avatarUrl!) : null,
               child: widget.avatarUrl == null 
                   ? Text(widget.name.isNotEmpty ? widget.name[0].toUpperCase() : '?', style: const TextStyle(fontSize: 12)) 
@@ -86,7 +86,7 @@ class _PatientChatScreenState extends State<PatientChatScreen> {
             const SizedBox(width: 10),
             Text(
               widget.name,
-              style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+              style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ],
         ),
@@ -113,6 +113,7 @@ class _PatientChatScreenState extends State<PatientChatScreen> {
                 }
 
                 return ListView.builder(
+                  reverse: true,
                   padding: const EdgeInsets.all(16.0),
                   itemCount: messages.length,
                   itemBuilder: (context, index) {

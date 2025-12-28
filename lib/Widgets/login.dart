@@ -80,7 +80,7 @@ class _LoginPageState extends State<LoginPage> {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Vai trò không khớp: Tài khoản là "$role" nhưng bạn đang đăng nhập với tư cách "${_selectedRole.name}"'),
+                    content: Text('Sai tài khoản/Mật khẩu. Vui lòng thử lại!'),
                     backgroundColor: Colors.orange,
                   ),
                 );
@@ -126,7 +126,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A192F), // Dark blue background
+      backgroundColor: const Color(0xFFF5F7FA), // Light background
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -138,11 +138,11 @@ class _LoginPageState extends State<LoginPage> {
               children: [
                 const Icon(Icons.shield_outlined, color: Colors.blue, size: 40),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'MediHouse',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Colors.blue[800],
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
@@ -152,35 +152,43 @@ class _LoginPageState extends State<LoginPage> {
                     'Chào Mừng Trở Lại',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Color(0xFF2D3748),
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 const SizedBox(height: 8),
-                  const Text(
-                    'Đăng nhập để tiếp tục sử dụng dịch vụ',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 16,
-                    ),
+                Text(
+                  'Đăng nhập để tiếp tục sử dụng dịch vụ',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 16,
                   ),
+                ),
                 const SizedBox(height: 40),
-                const Text('Địa chỉ Email', style: TextStyle(color: Colors.grey)),
+                const Text('Địa chỉ Email', style: TextStyle(color: Color(0xFF2D3748), fontWeight: FontWeight.w500)),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.black87),
                   decoration: InputDecoration(
-                    hintText: 'email@vidu.com',
-                    hintStyle: TextStyle(color: Colors.grey.shade600),
+                    hintText: 'email@gmail.com',
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
                     filled: true,
-                    fillColor: const Color(0xFF172A46),
+                    fillColor: Colors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Colors.blue),
                     ),
                   ),
                 ),
@@ -188,7 +196,7 @@ class _LoginPageState extends State<LoginPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Mật khẩu', style: TextStyle(color: Colors.grey)),
+                    const Text('Mật khẩu', style: TextStyle(color: Color(0xFF2D3748), fontWeight: FontWeight.w500)),
                     GestureDetector(
                       onTap: _handleForgotPassword,
                       child: const Text(
@@ -202,15 +210,23 @@ class _LoginPageState extends State<LoginPage> {
                 TextField(
                   controller: _passwordController,
                   obscureText: !_isPasswordVisible,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.black87),
                   decoration: InputDecoration(
                     hintText: 'Nhập mật khẩu của bạn',
-                    hintStyle: TextStyle(color: Colors.grey.shade600),
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
                     filled: true,
-                    fillColor: const Color(0xFF172A46),
+                    fillColor: Colors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Colors.blue),
                     ),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -226,16 +242,25 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text('Bạn là:', style: TextStyle(color: Colors.grey)),
+                const Text('Bạn là:', style: TextStyle(color: Color(0xFF2D3748), fontWeight: FontWeight.w500)),
                 const SizedBox(height: 12),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
+                Column(
                   children: [
-                    SizedBox(width: 100, child: _buildRoleButton(UserRole.patient, 'Bệnh nhân', FontAwesomeIcons.user)),
-                    SizedBox(width: 100, child: _buildRoleButton(UserRole.doctor, 'Bác sĩ', FontAwesomeIcons.userDoctor)),
-                    SizedBox(width: 110, child: _buildRoleButton(UserRole.pharmacy, 'Dược sĩ', FontAwesomeIcons.pills)),
-                    SizedBox(width: 110, child: _buildRoleButton(UserRole.receptionist, 'Lễ tân', FontAwesomeIcons.conciergeBell)),
+                    Row(
+                      children: [
+                        Expanded(child: _buildRoleButton(UserRole.patient, 'Bệnh nhân', FontAwesomeIcons.user)),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildRoleButton(UserRole.doctor, 'Bác sĩ', FontAwesomeIcons.userDoctor)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: _buildRoleButton(UserRole.pharmacy, 'Nhà thuốc', FontAwesomeIcons.houseMedical)),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildRoleButton(UserRole.receptionist, 'Lễ tân', FontAwesomeIcons.conciergeBell)),
+                      ],
+                    ),
                   ],
                 ),
                 const SizedBox(height: 32),
@@ -288,10 +313,10 @@ class _LoginPageState extends State<LoginPage> {
           });
         },
         icon: FaIcon(icon, color: isSelected ? Colors.white : Colors.blue, size: 18),
-        label: Text(text, style: TextStyle(color: isSelected ? Colors.white : Colors.white70)),
+        label: Text(text, style: TextStyle(color: isSelected ? Colors.white : Colors.blue[800])),
         style: OutlinedButton.styleFrom(
-          backgroundColor: isSelected ? Colors.blue : const Color(0xFF172A46),
-          side: BorderSide(color: isSelected ? Colors.blue : const Color(0xFF172A46)),
+          backgroundColor: isSelected ? Colors.blue : Colors.white,
+          side: BorderSide(color: isSelected ? Colors.blue : Colors.blue.withOpacity(0.3)),
           padding: const EdgeInsets.symmetric(vertical: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),

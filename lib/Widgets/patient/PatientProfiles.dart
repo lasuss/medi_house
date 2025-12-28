@@ -123,11 +123,36 @@ class _PatientProfilesState extends State<PatientProfiles> {
           ],
         ),
       )
-      // Danh sách các hồ sơ bệnh nhân
-          : ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _profiles.length,
-        itemBuilder: (context, index) {
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, size: 20, color: Colors.blue[800]),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            "Mỗi tài khoản được tạo tối đa 5 hồ sơ thành viên.",
+                            style: TextStyle(color: Colors.blue[900], fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _profiles.length,
+                    itemBuilder: (context, index) {
           final profile = _profiles[index];
           return Card(
             margin: const EdgeInsets.only(bottom: 12),
@@ -159,12 +184,20 @@ class _PatientProfilesState extends State<PatientProfiles> {
             ),
           );
         },
-      ),
-      // Nút nổi để thêm hồ sơ mới
-      floatingActionButton: FloatingActionButton(
+                  ),
+                ),
+              ],
+            ),
+      // Nút nổi để thêm hồ sơ mới (Đã làm nổi bật)
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: _addProfile,
-        backgroundColor: Colors.blue,
-        child: const Icon(Icons.add),
+        backgroundColor: const Color(0xFF2196F3),
+        elevation: 4,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          'Tạo Hồ Sơ Mới', 
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
       ),
     );
   }

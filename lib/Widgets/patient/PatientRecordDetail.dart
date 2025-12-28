@@ -76,6 +76,9 @@ class _PatientRecordDetailState extends State<PatientRecordDetail> {
           _prescription = presRes;
           _prescriptionItems = items;
           _appointment = apptRes;
+          
+          _parsePatientInfo(res);
+          
           _isLoading = false;
         });
       }
@@ -83,6 +86,31 @@ class _PatientRecordDetailState extends State<PatientRecordDetail> {
       debugPrint("Error fetching record: $e");
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  String _patientName = 'Bệnh nhân';
+  String _patientAge = '';
+  String _patientGender = '';
+  String _patientAddress = '';
+
+  void _parsePatientInfo(Map<String, dynamic> record) {
+     if (record['triage_data'] != null) {
+       _patientName = record['triage_data']['profile_name'] ?? 'Bệnh nhân';
+       _patientAge = record['triage_data']['age']?.toString() ?? '';
+       _patientGender = record['triage_data']['gender'] ?? '';
+       _patientAddress = record['triage_data']['address'] ?? '';
+     } else {
+        // Fallback for legacy Booking Init notes
+        final notes = record['notes']?.toString() ?? '';
+        if (notes.startsWith('Booking Init:')) {
+           final RegExp nameExp = RegExp(r'Bệnh nhân: (.*?)\.');
+           final match = nameExp.firstMatch(notes);
+           if (match != null) {
+             _patientName = match.group(1)?.trim() ?? 'Bệnh nhân';
+             _patientAddress = 'Thông tin trong ghi chú cũ';
+           }
+        }
+     }
   }
 
   // Xử lý hủy lịch hẹn: xóa toàn bộ dữ liệu liên quan (items → prescription → appointment → record)
@@ -162,6 +190,8 @@ class _PatientRecordDetailState extends State<PatientRecordDetail> {
         child: Column(
           children: [
             _buildHeaderCard(),
+            const SizedBox(height: 20),
+            _buildPatientInfoSection(),
             const SizedBox(height: 20),
             _buildDoctorCard(),
             const SizedBox(height: 20),
@@ -414,6 +444,45 @@ class _PatientRecordDetailState extends State<PatientRecordDetail> {
               ),
             );
           }).toList(),
+        ],
+      ),
+    );
+  }
+
+  // Thẻ thông tin bệnh nhân
+  Widget _buildPatientInfoSection() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              Icon(Icons.person, color: Colors.blue),
+              SizedBox(width: 8),
+              Text("Thông tin bệnh nhân", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildLabelValue("Họ tên", _patientName),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              if (_patientAge.isNotEmpty)
+                Expanded(child: _buildLabelValue("Tuổi", "$_patientAge tuổi")),
+              if (_patientGender.isNotEmpty)
+                Expanded(child: _buildLabelValue("Giới tính", _patientGender)),
+            ],
+          ),
+          if (_patientAddress.isNotEmpty) ...[
+             const SizedBox(height: 10),
+             _buildLabelValue("Địa chỉ", _patientAddress),
+          ]
         ],
       ),
     );

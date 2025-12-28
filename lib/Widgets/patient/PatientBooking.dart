@@ -143,29 +143,39 @@ class _PatientBookingState extends State<PatientBooking> {
             ),
           ),
         ),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _filteredDoctors.length,
-          itemBuilder: (context, index) {
-            final doc = _filteredDoctors[index];
-            final info = doc['doctor_info'] ?? {};
-            return Card(
-              child: ListTile(
-                leading: const CircleAvatar(child: Icon(Icons.person)),
-                title: Text(doc['name'] ?? 'Bác sĩ'),
-                subtitle: Text(info['specialty'] ?? 'Đa khoa'),
-                onTap: () {
-                  setState(() {
-                    _selectedItem = doc;
-                    _selectedItem!['price'] = 150000;
-                  });
-                },
-                selected: _selectedItem == doc,
-                selectedTileColor: Colors.blue.withOpacity(0.1),
-              ),
-            );
-          },
+        Container(
+          height: 400, // Limit height to approx 5 items
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: ListView.builder(
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            itemCount: _filteredDoctors.length,
+            itemBuilder: (context, index) {
+              final doc = _filteredDoctors[index];
+              final info = doc['doctor_info'] ?? {};
+              return Card(
+                elevation: 0,
+                margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+                child: ListTile(
+                  leading: const CircleAvatar(child: Icon(Icons.person)),
+                  title: Text(doc['name'] ?? 'Bác sĩ'),
+                  subtitle: Text(info['specialty'] ?? 'Đa khoa'),
+                  onTap: () {
+                    setState(() {
+                      _selectedItem = doc;
+                      _selectedItem!['price'] = 150000;
+                    });
+                  },
+                  selected: _selectedItem == doc,
+                  selectedTileColor: Colors.blue.withOpacity(0.1),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              );
+            },
+          ),
         ),
       ],
     );
@@ -433,12 +443,41 @@ class _PatientBookingState extends State<PatientBooking> {
         }
       }
 
+      // Prepare triage_data from selected profile
+      Map<String, dynamic>? triageData;
+      if (_selectedProfile != null) {
+        final p = _selectedProfile!;
+        int age = 0;
+        if (p['dob'] != null) {
+          try {
+             final dob = DateTime.parse(p['dob']);
+             age = DateTime.now().year - dob.year;
+          } catch (_) {}
+        }
+        
+        final addressParts = [
+          p['address_street'], 
+          p['address_ward'], 
+          p['address_district'],
+          p['address_province']
+        ].where((e) => e != null && e.toString().isNotEmpty).join(', ');
+
+        triageData = {
+          'profile_name': p['full_name'],
+          'age': age,
+          'gender': p['gender'],
+          'address': addressParts,
+          'profile_id': p['id']
+        };
+      }
+
       // Tạo bản ghi hồ sơ khám (records)
       final recordRes = await supabase.from('records').insert({
         'patient_id': user.id,
         'doctor_id': doctorId,
         'status': 'Pending',
         'notes': "Booking Init: $notes",
+        'triage_data': triageData,
         'symptoms': _selectedCategory == 'dich_vu' ? serviceName : 'Khám theo yêu cầu'
       }).select().single();
 
