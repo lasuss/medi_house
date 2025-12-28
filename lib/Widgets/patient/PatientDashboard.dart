@@ -20,10 +20,9 @@ class _PatientDashboardState extends State<PatientDashboard> {
   String? _avatarUrl;
   // Danh sách hồ sơ khám bệnh
   List<Map<String, dynamic>> _records = [];
-  List<Map<String, dynamic>> _filteredRecords = []; // Added
+  List<Map<String, dynamic>> _filteredRecords = [];
   bool _isLoading = true;
 
-  // Added filter state
   final List<String> _filters = [
     'Tất cả',
     'Kết quả khám bệnh',
@@ -50,10 +49,10 @@ class _PatientDashboardState extends State<PatientDashboard> {
       _patientName = userRes['name'] ?? 'Bệnh nhân';
       _avatarUrl = userRes['avatar_url'];
 
-      // Lấy danh sách hồ sơ khám (records) kèm thông tin bác sĩ và lịch hẹn
+      // Lấy danh sách hồ sơ khám (records) kèm thông tin bác sĩ, lịch hẹn và đơn thuốc
       final recordsRes = await supabase
           .from('records')
-          .select('*, doctor:doctor_id(id, name), appointments(*)')
+          .select('*, doctor:doctor_id(id, name), appointments(*), prescriptions(*)')
           .eq('patient_id', userId)
           .order('created_at', ascending: false);
 
@@ -70,17 +69,23 @@ class _PatientDashboardState extends State<PatientDashboard> {
     }
   }
 
-  // Added helper to categorize records
+  // Helper để phân loại records dựa trên prescriptions và appointments
   String _getRecordType(Map<String, dynamic> record) {
-    // Heuristics based on appointment type first
+    // Kiểm tra xem có đơn thuốc không
+    final prescriptions = record['prescriptions'];
+    if (prescriptions != null && (prescriptions is List) && prescriptions.isNotEmpty) {
+      return 'Đơn thuốc';
+    }
+
+    // Kiểm tra loại appointment
     final appointments = record['appointments'];
     if (appointments != null && (appointments is List) && appointments.isNotEmpty) {
-       final apptType = appointments[0]['type'];
-       if (apptType == 'xet_nghiem') {
-          return 'Kết quả xét nghiệm';
-       } else if (apptType == 'dich_vu' || apptType == 'bac_si') {
-          return 'Kết quả khám bệnh';
-       }
+      final apptType = appointments[0]['type'];
+      if (apptType == 'xet_nghiem') {
+        return 'Kết quả xét nghiệm';
+      } else if (apptType == 'dich_vu' || apptType == 'bac_si') {
+        return 'Kết quả khám bệnh';
+      }
     }
 
     // Fallback heuristics based on content
@@ -88,18 +93,14 @@ class _PatientDashboardState extends State<PatientDashboard> {
     final diagnosis = (record['diagnosis'] as String? ?? '').toLowerCase();
     final notes = (record['notes'] as String? ?? '').toLowerCase();
 
-    if (symptoms.contains('đơn thuốc') || diagnosis.contains('đơn thuốc') || notes.contains('đơn thuốc')) {
-      return 'Đơn thuốc';
-    }
     if (symptoms.contains('xét nghiệm') || diagnosis.contains('xét nghiệm') || notes.contains('xét nghiệm')) {
       return 'Kết quả xét nghiệm';
     }
 
-    // Default to a general examination result
     return 'Kết quả khám bệnh';
   }
 
-  // Added filter logic
+  // Logic lọc records
   void _filterRecords() {
     if (_selectedFilter == 'Tất cả') {
       _filteredRecords = List<Map<String, dynamic>>.from(_records);
@@ -118,22 +119,22 @@ class _PatientDashboardState extends State<PatientDashboard> {
       backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
         child: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(),
-                  const SizedBox(height: 24),
-                  _buildSectionTitle('Kết quả khám và Xét nghiệm'),
-                  const SizedBox(height: 16),
-                  _buildFilterChips(),
-                  const SizedBox(height: 12),
-                  _buildRecordsList(),
-                ],
-              ),
-            ),
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 24),
+              _buildSectionTitle('Kết quả khám và Xét nghiệm'),
+              const SizedBox(height: 16),
+              _buildFilterChips(),
+              const SizedBox(height: 12),
+              _buildRecordsList(),
+            ],
+          ),
+        ),
       ),
       // Nút nổi để thêm hồ sơ khám mới
       floatingActionButton: FloatingActionButton(
@@ -204,7 +205,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
     );
   }
 
-  // Added Widget for filter chips
+  // Widget for filter chips
   Widget _buildFilterChips() {
     return SizedBox(
       height: 36,
@@ -246,7 +247,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
   }
 
   Widget _buildRecordsList() {
-    if (_filteredRecords.isEmpty) { // Using filtered list
+    if (_filteredRecords.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
@@ -260,8 +261,8 @@ class _PatientDashboardState extends State<PatientDashboard> {
               const SizedBox(height: 12),
               Text(
                 _selectedFilter == 'Tất cả'
-                  ? 'Chưa có hồ sơ khám bệnh nào'
-                  : 'Không tìm thấy kết quả cho "$_selectedFilter"',
+                    ? 'Chưa có hồ sơ khám bệnh nào'
+                    : 'Không tìm thấy kết quả cho "$_selectedFilter"',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey[500]),
               ),
@@ -271,19 +272,25 @@ class _PatientDashboardState extends State<PatientDashboard> {
       );
     }
 
-    // Danh sách các thẻ hồ sơ khám (có thể click để xem chi tiết)
+    // Danh sách các thẻ hồ sơ khám
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _filteredRecords.length, // Using filtered list
+      itemCount: _filteredRecords.length,
       itemBuilder: (context, index) {
-        final record = _filteredRecords[index]; // Using filtered list
+        final record = _filteredRecords[index];
         final created = DateTime.parse(record['created_at']).toLocal();
         final doctorMap = record['doctor'];
         String doctorName = 'Bác sĩ';
         if (doctorMap != null && doctorMap is Map) {
           doctorName = doctorMap['name'] ?? 'Bác sĩ';
         }
+
+        // Kiểm tra có đơn thuốc không
+        final prescriptions = record['prescriptions'];
+        final hasPrescription = prescriptions != null &&
+            (prescriptions is List) &&
+            prescriptions.isNotEmpty;
 
         // Xử lý hiển thị thời gian hẹn từ appointments
         String? timeDisplay;
@@ -304,7 +311,11 @@ class _PatientDashboardState extends State<PatientDashboard> {
         Color iconColor = Colors.blue;
         String? doctorDisplay = doctorName;
 
-        if (appointments != null && (appointments is List) && appointments.isNotEmpty) {
+        if (hasPrescription) {
+          typeDisplay = 'Đơn thuốc';
+          icon = Icons.medication_outlined;
+          iconColor = Colors.green;
+        } else if (appointments != null && (appointments is List) && appointments.isNotEmpty) {
           final apptType = appointments[0]['type'];
           if (apptType == 'xet_nghiem') {
             typeDisplay = 'Phiếu Xét Nghiệm';
@@ -321,16 +332,12 @@ class _PatientDashboardState extends State<PatientDashboard> {
             iconColor = Colors.blue;
           }
         } else {
-          // Dự đoán loại dựa vào symptoms nếu không có appointment
+
           final symptoms = (record['symptoms'] as String? ?? '').toLowerCase();
           if (symptoms.contains('xét nghiệm')) {
             typeDisplay = 'Kết quả xét nghiệm';
             icon = Icons.biotech;
             iconColor = Colors.purple;
-          } else if (symptoms.contains('đơn thuốc')) {
-            typeDisplay = 'Đơn thuốc';
-            icon = Icons.medication_outlined;
-            iconColor = Colors.green;
           }
         }
 
@@ -422,6 +429,26 @@ class _PatientDashboardState extends State<PatientDashboard> {
                               ),
                             ),
                             const SizedBox(height: 4),
+                          ],
+                          // Hiển thị số lượng thuốc nếu có đơn thuốc
+                          if (hasPrescription) ...[
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4.0),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.medical_services, size: 12, color: Colors.green[700]),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    "${prescriptions.length} loại thuốc",
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.green[700],
+                                        fontWeight: FontWeight.w500
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                           // Hiển thị thông tin ngày giờ hẹn
                           if (timeDisplay != null)
