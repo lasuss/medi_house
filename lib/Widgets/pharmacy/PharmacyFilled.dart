@@ -40,12 +40,12 @@ class _PharmacyFilledState extends State<PharmacyFilled> {
       final List<Prescription> parsedList = [];
       for (var json in data) {
          try {
-             // Debug print item ID if possible
+             // In debug ID nếu có
              // print("Parsing item: ${json['id']}");
              final p = Prescription.fromJson(json);
              parsedList.add(p);
          } catch (parseErr) {
-             print("!!! [PharmacyFilled] Parse Error for item ${json['id']}: $parseErr");
+             print("!!! [PharmacyFilled] Lỗi parse item ${json['id']}: $parseErr");
          }
       }
       
@@ -59,17 +59,17 @@ class _PharmacyFilledState extends State<PharmacyFilled> {
       print('!!! [PharmacyFilled] Error fetching history: $e');
       if (mounted) {
          setState(() => _isLoading = false);
-         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Lỗi: $e")));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Light Theme Design matching Pending Screen
+    // Thiết kế Light Theme đồng bộ với màn hình Chờ xử lý
     return Column(
       children: [
-        // Optional Header or Filter could go here
+        // Có thể thêm Header hoặc Bộ lọc ở đây
         
         Expanded(
           child: _isLoading 
@@ -97,7 +97,7 @@ class _PharmacyFilledState extends State<PharmacyFilled> {
           Icon(Icons.history_edu, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            'No Filled Prescriptions',
+            'Chưa có lịch sử cấp thuốc',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -106,7 +106,7 @@ class _PharmacyFilledState extends State<PharmacyFilled> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Your history will appear here.',
+            'Lịch sử cấp phát thuốc sẽ hiển thị ở đây.',
             style: TextStyle(color: Colors.grey[500]),
           ),
         ],
@@ -136,7 +136,7 @@ class _PharmacyFilledState extends State<PharmacyFilled> {
           child: const FaIcon(FontAwesomeIcons.check, size: 16, color: Color(0xFF2F855A)),
         ),
         title: Text(
-          item.patientName ?? 'Unknown Patient',
+          item.patientName ?? 'Bệnh nhân ẩn danh',
           style: const TextStyle(
             fontWeight: FontWeight.bold, 
             color: Color(0xFF2D3748),
@@ -148,11 +148,11 @@ class _PharmacyFilledState extends State<PharmacyFilled> {
           children: [
             const SizedBox(height: 4),
             Text(
-              'Dr. ${item.doctorName ?? 'Unknown'}',
+              'Bs. ${item.doctorName ?? 'Không rõ'}',
                style: TextStyle(color: Colors.grey[600], fontSize: 13),
             ),
             Text(
-              'Filled on: ${item.createdAt.day}/${item.createdAt.month}/${item.createdAt.year} ${item.createdAt.hour}:${item.createdAt.minute.toString().padLeft(2,'0')}',
+              'Đã cấp lúc: ${item.createdAt.day}/${item.createdAt.month}/${item.createdAt.year} ${item.createdAt.hour}:${item.createdAt.minute.toString().padLeft(2,'0')}',
               style: TextStyle(color: Colors.grey[500], fontSize: 12),
             ),
           ],
@@ -163,7 +163,7 @@ class _PharmacyFilledState extends State<PharmacyFilled> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             color: const Color(0xFFF7FAFC),
             child: Text(
-              'MEDICATIONS (${item.items.length})',
+              'DANH SÁCH THUỐC (${item.items.length})',
               style: const TextStyle(
                 fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey
               ),
@@ -177,9 +177,9 @@ class _PharmacyFilledState extends State<PharmacyFilled> {
             child: ListTile(
               dense: true,
               leading: const Icon(Icons.medication_outlined, size: 18, color: Colors.grey),
-              title: Text(pi.medicine?.name ?? 'Unknown Medicine', 
+              title: Text(pi.medicine?.name ?? 'Thuốc không rõ tên', 
                 style: const TextStyle(fontWeight: FontWeight.w500, color: Color(0xFF4A5568))),
-              subtitle: Text(pi.instructions ?? 'No instructions', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+              subtitle: Text(pi.instructions ?? 'Không có hướng dẫn', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
               trailing: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(

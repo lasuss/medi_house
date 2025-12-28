@@ -15,7 +15,7 @@ class ReceptionistProfile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // We can fetch user details here if needed, or just show basic info
+    // Có thể lấy thêm thông tin user ở đây nếu cần, hoặc chỉ hiện thông tin cơ bản
     final user = Supabase.instance.client.auth.currentUser;
     // user?.email might be available.
 

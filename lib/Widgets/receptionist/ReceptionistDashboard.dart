@@ -15,7 +15,7 @@ class _ReceptionistDashboardState extends State<ReceptionistDashboard> {
   List<Map<String, dynamic>> _historyRequests = [];
   bool _isLoadingHistory = false;
   
-  // Missing variables restored
+  // Các biến dữ liệu
   List<Map<String, dynamic>> _triageRequests = [];
   bool _isLoading = true;
 
@@ -50,14 +50,14 @@ class _ReceptionistDashboardState extends State<ReceptionistDashboard> {
   Future<void> _fetchHistoryRequests() async {
     setState(() => _isLoadingHistory = true);
     try {
-      // Fetch processed records (has doctor_id)
+      // Lấy các bản ghi đã xử lý (đã có bác sĩ phụ trách)
       final res = await supabase
           .from('records')
           .select('*, patient:patient_id(id, name, avatar_url, national_id, phone), doctor:doctor_id(name)')
-          .not('doctor_id', 'is', null) // Has been assigned
+          .not('doctor_id', 'is', null) // Đã được phân công
           .not('triage_data', 'is', null)
           .order('updated_at', ascending: false)
-          .limit(50); // Limit usage for efficiency
+          .limit(50); // Giới hạn số lượng để tối ưu hiệu năng
       
       if (mounted) {
         setState(() {
@@ -96,9 +96,9 @@ class _ReceptionistDashboardState extends State<ReceptionistDashboard> {
             Expanded(
               child: TabBarView(
                 children: [
-                   // Tab 1: Pending
+                   // Tab 1: Chờ xử lý
                   _buildList(_triageRequests, _isLoading, _fetchTriageRequests),
-                   // Tab 2: History
+                   // Tab 2: Lịch sử
                   _buildList(_historyRequests, _isLoadingHistory, _fetchHistoryRequests, isHistory: true),
                 ],
               ),
@@ -115,7 +115,7 @@ class _ReceptionistDashboardState extends State<ReceptionistDashboard> {
      return RefreshIndicator(
        onRefresh: () async {
          await onRefresh();
-         if (isHistory) _fetchTriageRequests(); // Refresh both often makes sense
+         if (isHistory) _fetchTriageRequests(); // Nên làm mới cả hai danh sách vì dữ liệu liên quan
          else _fetchHistoryRequests();
        },
        child: items.isEmpty
@@ -154,13 +154,13 @@ class _ReceptionistDashboardState extends State<ReceptionistDashboard> {
     final created = DateTime.parse(req['created_at']).toLocal();
     final timeAgo = _timeAgo(created);
     
-    // Extract key info
+    // Trích xuất thông tin chính
     final symptoms = triageData['main_symptoms'] ?? 'Không rõ';
     final severity = triageData['severity'] ?? 0;
     final dangerousSigns = triageData['dangerous_signs'] as List?;
     final hasDangerousSigns = dangerousSigns != null && dangerousSigns.isNotEmpty;
     
-    // Doctor info if history
+    // Thông tin bác sĩ nếu là lịch sử
     String? assignedDoctor;
     if (isHistory && req['doctor'] != null) {
        assignedDoctor = req['doctor']['name'];

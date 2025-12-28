@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 
+/// Widget hiển thị màn hình Chi tiết Chính sách bảo mật cho người dùng.
 class PrivacyPolicy extends StatelessWidget {
   const PrivacyPolicy({Key? key}) : super(key: key);
 

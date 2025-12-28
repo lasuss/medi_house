@@ -45,7 +45,7 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
       debugPrint('Error fetching inventory: $e');
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
       }
     }
   }
@@ -57,9 +57,9 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
   }
 
   String _getStatusText(int quantity) {
-    if (quantity <= 10) return 'Low';
-    if (quantity <= 50) return 'Warning';
-    return 'Good';
+    if (quantity <= 10) return 'Sắp hết';
+    if (quantity <= 50) return 'Cảnh báo';
+    return 'Đủ';
   }
 
   List<Inventory> get _filteredInventory {
@@ -78,7 +78,7 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Search Bar
+            // Thanh tìm kiếm
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
@@ -95,7 +95,7 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
               child: TextField(
                 onChanged: (value) => setState(() => _searchQuery = value),
                 decoration: const InputDecoration(
-                  hintText: 'Search medicine...',
+                  hintText: 'Tìm kiếm thuốc...',
                   border: InputBorder.none,
                   icon: Icon(Icons.search, color: Colors.grey),
                 ),
@@ -103,13 +103,13 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
             ),
             const SizedBox(height: 20),
             
-            // Stats Row
+            // Hàng thống kê
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildStatCard('Total Items', '${_inventoryList.length}', Colors.blue),
+                _buildStatCard('Tổng số loại', '${_inventoryList.length}', Colors.blue),
                 _buildStatCard(
-                  'Low Stock', 
+                  'Sắp hết', 
                   '${_inventoryList.where((i) => i.quantity <= 10).length}', 
                   Colors.red
                 ),
@@ -117,7 +117,7 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
             ),
             const SizedBox(height: 20),
 
-            // Inventory List
+            // Danh sách tồn kho
             Expanded(
               child: _isLoading 
               ? const Center(child: CircularProgressIndicator())
@@ -125,8 +125,8 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
                 itemCount: _filteredInventory.length,
                 itemBuilder: (context, index) {
                   final item = _filteredInventory[index];
-                  final medicineName = item.medicine?.name ?? 'Unknown Medicine';
-                  final unit = item.medicine?.unit ?? 'unit';
+                  final medicineName = item.medicine?.name ?? 'Thuốc không rõ';
+                  final unit = item.medicine?.unit ?? 'đơn vị';
                   
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
@@ -149,7 +149,7 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
                         medicineName,
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      subtitle: Text('${item.quantity} $unit available' + (item.expiryDate != null ? '\nExp: ${item.expiryDate!.day}/${item.expiryDate!.month}/${item.expiryDate!.year}' : '')),
+                      subtitle: Text('${item.quantity} $unit hiện có' + (item.expiryDate != null ? '\nHSD: ${item.expiryDate!.day}/${item.expiryDate!.month}/${item.expiryDate!.year}' : '')),
                       isThreeLine: item.expiryDate != null,
                       trailing: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -195,7 +195,7 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add New Medicine'),
+        title: const Text('Thêm thuốc mới'),
         content: SingleChildScrollView(
           child: Form(
             key: _formKey,
@@ -204,13 +204,13 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
               children: [
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Medicine Name', border: OutlineInputBorder()),
-                  validator: (value) => value?.isEmpty == true ? 'Required' : null,
+                  decoration: const InputDecoration(labelText: 'Tên thuốc', border: OutlineInputBorder()),
+                  validator: (value) => value?.isEmpty == true ? 'Bắt buộc' : null,
                 ),
                 const SizedBox(height: 10),
                 TextFormField(
                   controller: _ingredientController,
-                  decoration: const InputDecoration(labelText: 'Active Ingredient', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'Hoạt chất', border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 10),
                 Row(
@@ -218,17 +218,17 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
                     Expanded(
                       child: TextFormField(
                         controller: _quantityController,
-                        decoration: const InputDecoration(labelText: 'Quantity', border: OutlineInputBorder()),
+                        decoration: const InputDecoration(labelText: 'Số lượng', border: OutlineInputBorder()),
                         keyboardType: TextInputType.number,
-                        validator: (value) => value?.isEmpty == true ? 'Required' : null,
+                        validator: (value) => value?.isEmpty == true ? 'Bắt buộc' : null,
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: TextFormField(
                         controller: _unitController,
-                        decoration: const InputDecoration(labelText: 'Unit (e.g., Box)', border: OutlineInputBorder()),
-                        validator: (value) => value?.isEmpty == true ? 'Required' : null,
+                        decoration: const InputDecoration(labelText: 'Đơn vị (VD: Hộp, Vỉ)', border: OutlineInputBorder()),
+                        validator: (value) => value?.isEmpty == true ? 'Bắt buộc' : null,
                       ),
                     ),
                   ],
@@ -236,7 +236,7 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
                 const SizedBox(height: 10),
                 TextFormField(
                   controller: _priceController,
-                  decoration: const InputDecoration(labelText: 'Price', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'Giá tiền', border: OutlineInputBorder()),
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 10),
@@ -244,7 +244,7 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
                   controller: _expiryController,
                   readOnly: true,
                   decoration: const InputDecoration(
-                    labelText: 'Expiry Date', 
+                    labelText: 'Hạn sử dụng', 
                     border: OutlineInputBorder(),
                     suffixIcon: Icon(Icons.calendar_today),
                   ),
@@ -266,12 +266,12 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
           ElevatedButton(
             onPressed: () async {
               if (_formKey.currentState!.validate()) {
                 try {
-                  // 1. Insert Medicine
+                  // 1. Thêm thông tin thuốc vào bảng medicines
                   final medicineRes = await _supabase.from('medicines').insert({
                     'name': _nameController.text,
                     'active_ingredient': _ingredientController.text,
@@ -281,7 +281,7 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
 
                   final medicineId = medicineRes['id'];
 
-                  // 2. Insert Inventory
+                  // 2. Thêm thông tin tồn kho vào bảng inventory
                   await _supabase.from('inventory').insert({
                     'medicine_id': medicineId,
                     'quantity': int.parse(_quantityController.text),
@@ -291,15 +291,15 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
                   if (mounted) {
                     Navigator.pop(context);
                     _fetchInventory(); // Refresh list
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added successfully')));
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã thêm thành công')));
                   }
                 } catch (e) {
                   debugPrint('Error adding medicine: $e');
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
                 }
               }
             },
-            child: const Text('Add'),
+            child: const Text('Thêm'),
           ),
         ],
       ),

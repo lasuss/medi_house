@@ -16,7 +16,7 @@ class _ReceptionistTriageDetailState extends State<ReceptionistTriageDetail> {
   bool _isLoading = true;
   Map<String, dynamic>? _record;
   
-  // Doctor Selection
+  // Chọn bác sĩ
   List<Map<String, dynamic>> _doctors = [];
   String? _selectedDoctorId;
   String? _selectedSpecialtyFilter;
@@ -34,14 +34,14 @@ class _ReceptionistTriageDetailState extends State<ReceptionistTriageDetail> {
 
   Future<void> _fetchData() async {
     try {
-      // 1. Fetch Record
+      // 1. Lấy thông tin bản ghi
       final recRes = await supabase
           .from('records')
-          .select('*, patient:patient_id(*)') // Fetch full patient info
+          .select('*, patient:patient_id(*)') // Lấy thông tin bệnh nhân
           .eq('id', widget.recordId)
           .single();
       
-      // 2. Fetch Doctors
+      // 2. Lấy danh sách bác sĩ
       final docRes = await supabase
           .from('doctor_info')
           .select('*, user:user_id(name, avatar_url)');
@@ -51,11 +51,11 @@ class _ReceptionistTriageDetailState extends State<ReceptionistTriageDetail> {
           _record = recRes;
           _doctors = List<Map<String, dynamic>>.from(docRes);
           
-          // Pre-fill if editing history
+          // Điền sẵn nếu đang xem lịch sử (đã có bác sĩ)
           if (_record!['doctor_id'] != null) {
             _selectedDoctorId = _record!['doctor_id'];
             
-            // Try to find specialty to set filter (optional UX, not strict)
+            // Thử tìm chuyên khoa để đặt bộ lọc (tùy chọn)
             try {
               final doc = _doctors.firstWhere((d) => d['user_id'] == _selectedDoctorId);
               if (_specialties.contains(doc['specialty'])) {
@@ -84,10 +84,10 @@ class _ReceptionistTriageDetailState extends State<ReceptionistTriageDetail> {
 
     setState(() => _isSaving = true);
     try {
-      // Update record with doctor_id
+      // Cập nhật bản ghi với mã bác sĩ
       await supabase.from('records').update({
         'doctor_id': _selectedDoctorId,
-        'status': 'Pending', // Ensure it's Pending so doctor sees it
+        'status': 'Pending', // Đảm bảo trạng thái là Pending để bác sĩ thấy
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', widget.recordId);
 
@@ -99,7 +99,7 @@ class _ReceptionistTriageDetailState extends State<ReceptionistTriageDetail> {
       // Actually, DoctorDashboard lists APPOINTMENTS usually.
       // So we should probably create an appointment for "Today" (Now).
       
-      // Manage Appointment
+      // Quản lý lịch hẹn (Appointment)
       final existingAppt = await supabase
           .from('appointments')
           .select('id')
@@ -109,7 +109,7 @@ class _ReceptionistTriageDetailState extends State<ReceptionistTriageDetail> {
       final now = DateTime.now();
       
       if (existingAppt != null) {
-        // Update existing
+        // Cập nhật lịch hẹn có sẵn
         await supabase.from('appointments').update({
           'doctor_id': _selectedDoctorId,
           'date': now.toIso8601String(),
@@ -117,7 +117,7 @@ class _ReceptionistTriageDetailState extends State<ReceptionistTriageDetail> {
           'updated_at': now.toIso8601String(),
         }).eq('id', existingAppt['id']);
       } else {
-        // Insert new
+        // Tạo lịch hẹn mới
         await supabase.from('appointments').insert({
           'record_id': widget.recordId,
           'patient_id': _record!['patient_id'],
@@ -245,7 +245,7 @@ class _ReceptionistTriageDetailState extends State<ReceptionistTriageDetail> {
   }
 
   Widget _buildDoctorAssignment() {
-    // Filter doctors
+    // Lọc danh sách bác sĩ
     final doctorsFiltered = _doctors.where((d) {
        if (_selectedSpecialtyFilter == null) return true;
        return d['specialty'] == _selectedSpecialtyFilter;
@@ -276,7 +276,7 @@ class _ReceptionistTriageDetailState extends State<ReceptionistTriageDetail> {
         ),
         const SizedBox(height: 16),
         
-        // Doctor Dropdown/List
+        // Danh sách chọn bác sĩ
         if (doctorsFiltered.isEmpty)
            const Padding(padding: EdgeInsets.all(8.0), child: Text("Không tìm thấy bác sĩ phù hợp", style: TextStyle(fontStyle: FontStyle.italic))),
 

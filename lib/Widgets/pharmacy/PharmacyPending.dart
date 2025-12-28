@@ -49,7 +49,7 @@ class _PharmacyPendingState extends State<PharmacyPending> {
     setState(() => _isFilling = true);
 
     try {
-      // 1. Iterate items to check and deduct stock
+      // 1. Duyệt qua từng thuốc để kiểm tra và trừ tồn kho
       for (var item in prescription.items) {
         final inventoryRes = await _supabase
             .from('inventory')
@@ -61,7 +61,7 @@ class _PharmacyPendingState extends State<PharmacyPending> {
 
         final inventoryList = inventoryRes as List<dynamic>;
         if (inventoryList.isEmpty) {
-          throw Exception("Insufficient stock for ${item.medicine?.name ?? 'Item'} (ID: ${item.medicineId})");
+          throw Exception("Không đủ tồn kho cho ${item.medicine?.name ?? 'Thuốc'} (ID: ${item.medicineId})");
         }
         
         final batch = inventoryList.first;
@@ -70,7 +70,7 @@ class _PharmacyPendingState extends State<PharmacyPending> {
         await _supabase.from('inventory').update({'quantity': newQuantity}).eq('id', batch['id']);
       }
 
-      // 2. Update status to Filled
+      // 2. Cập nhật trạng thái đơn thuốc thành Đã cấp (Filled)
       await _supabase.from('prescriptions').update({'status': 'Filled'}).eq('id', prescription.id);
 
       if (mounted) {
@@ -79,7 +79,7 @@ class _PharmacyPendingState extends State<PharmacyPending> {
             if(mounted) {
                ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                    content: Text('✅ Prescription filled successfully!'),
+                    content: Text('✅ Đã cấp thuốc thành công!'),
                     backgroundColor: Colors.green,
                 ),
                );
@@ -94,7 +94,7 @@ class _PharmacyPendingState extends State<PharmacyPending> {
             if(mounted) {
                ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                    content: Text('⚠️ Error: ${e.toString().replaceAll('Exception: ', '')}'),
+                    content: Text('⚠️ Lỗi: ${e.toString().replaceAll('Exception: ', '')}'),
                     backgroundColor: Colors.redAccent,
                     behavior: SnackBarBehavior.floating,
                 ),
@@ -111,7 +111,7 @@ class _PharmacyPendingState extends State<PharmacyPending> {
 
   @override
   Widget build(BuildContext context) {
-    // Using a light, clean theme consistent with AppShell
+    // Sử dụng theme sáng sạch, đồng bộ
     return Column(
       children: [
         if (_isFilling) 
@@ -147,7 +147,7 @@ class _PharmacyPendingState extends State<PharmacyPending> {
           Icon(Icons.assignment_turned_in_outlined, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            'No Pending Prescriptions',
+            'Không có đơn thuốc chờ',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -156,7 +156,7 @@ class _PharmacyPendingState extends State<PharmacyPending> {
           ),
           const SizedBox(height: 8),
           Text(
-            'All caught up!',
+            'Đã hoàn thành tất cả!',
             style: TextStyle(color: Colors.grey[500]),
           ),
         ],
@@ -214,7 +214,7 @@ class _PharmacyPendingState extends State<PharmacyPending> {
                     border: Border.all(color: const Color(0xFFFEB2B2)),
                   ),
                   child: const Text(
-                    'Needs Filling',
+                    'Cần cấp thuốc',
                     style: TextStyle(
                       color: Color(0xFFC53030),
                       fontSize: 11,
@@ -246,7 +246,7 @@ class _PharmacyPendingState extends State<PharmacyPending> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            item.patientName ?? 'Unknown Patient',
+                            item.patientName ?? 'Bệnh nhân ẩn danh',
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -255,7 +255,7 @@ class _PharmacyPendingState extends State<PharmacyPending> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Prescribed by Dr. ${item.doctorName ?? 'Unknown'}',
+                            'Kê đơn bởi Bs. ${item.doctorName ?? 'Không rõ'}',
                             style: TextStyle(
                               fontSize: 13,
                               color: Colors.grey[500],
@@ -273,7 +273,7 @@ class _PharmacyPendingState extends State<PharmacyPending> {
                 
                 // Medicines List
                 const Text(
-                  'MEDICATIONS',
+                  'DANH SÁCH THUỐC',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -300,7 +300,7 @@ class _PharmacyPendingState extends State<PharmacyPending> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              pi.medicine?.name ?? 'Unknown Drug',
+                              pi.medicine?.name ?? 'Thuốc không rõ tên',
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
@@ -346,7 +346,7 @@ class _PharmacyPendingState extends State<PharmacyPending> {
                     icon: _isFilling 
                       ? const SizedBox(width:16, height:16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) 
                       : const Icon(Icons.check_circle_outline),
-                    label: Text(_isFilling ? 'Processing...' : 'Fill Prescription'),
+                    label: Text(_isFilling ? 'Đang xử lý...' : 'Cấp Thuốc Ngay'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2196F3),
                       foregroundColor: Colors.white,

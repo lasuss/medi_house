@@ -15,14 +15,14 @@ class _PatientTriageFormState extends State<PatientTriageForm> {
   final SupabaseClient supabase = Supabase.instance.client;
   bool _isLoading = false;
 
-  // Form Fields
+  // Các trường nhập liệu của form
   final TextEditingController _symptomsController = TextEditingController();
   String _duration = 'Dưới 1 ngày';
   double _severity = 1.0; // 1-10
   
-  // Demographics (Auto-filled from Profile)
+  // Thông tin nhân khẩu học (Tự động điền từ hồ sơ)
 
-  // Dangerous Signs
+  // Danh sách các dấu hiệu nguy hiểm cần cảnh báo
   final Map<String, bool> _dangerousSigns = {
     'Khó thở': false,
     'Đau ngực dữ dội': false,
@@ -32,7 +32,7 @@ class _PatientTriageFormState extends State<PatientTriageForm> {
     'Mất ý thức / Lơ mơ': false,
   };
 
-  // Triage Data
+  // Dữ liệu phân loại (Triage)
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
   String? _selectedTime;
 
@@ -51,7 +51,7 @@ class _PatientTriageFormState extends State<PatientTriageForm> {
       final userId = supabase.auth.currentUser?.id;
       if (userId == null) return;
       
-      // Fetch all profiles for this user
+      // Lấy danh sách hồ sơ bệnh nhân của người dùng này
       final res = await supabase.from('patient_profiles').select().eq('user_id', userId);
       
       if (mounted) {
@@ -59,7 +59,7 @@ class _PatientTriageFormState extends State<PatientTriageForm> {
           _profiles = List<Map<String, dynamic>>.from(res);
           _isLoadingProfile = false;
           
-          // Auto-select first profile if currently empty selection
+          // Tự động chọn hồ sơ đầu tiên nếu chưa chọn
           if (_profiles.isNotEmpty && _selectedProfile == null) {
             _onProfileSelected(_profiles.first);
           }
@@ -90,7 +90,7 @@ class _PatientTriageFormState extends State<PatientTriageForm> {
       final userId = supabase.auth.currentUser!.id;
       final profileName = _selectedProfile?['full_name'] ?? 'Không xác định';
       
-      // Calculate age from profile dob or default to 0
+      // Tính toán tuổi từ ngày sinh (nếu có)
       int age = 0;
       String gender = 'Không rõ';
       
@@ -122,12 +122,12 @@ class _PatientTriageFormState extends State<PatientTriageForm> {
         'submitted_at': DateTime.now().toIso8601String(),
       };
 
-      // Create Record
+      // Tạo bản ghi y tế mới
       await supabase.from('records').insert({
         'patient_id': userId,
-        'doctor_id': null, // Important: NULL means needs triage
+        'doctor_id': null, // Quan trọng: NULL nghĩa là cần được phân loại/điều phối
         'status': 'Pending',
-        'symptoms': _symptomsController.text, // Mirror for easy viewing
+        'symptoms': _symptomsController.text, // Lưu lại triệu chứng để dễ xem ở danh sách
         'notes': 'Yêu cầu phân loại cho: $profileName',
         'triage_data': triageData,
       });
@@ -187,7 +187,7 @@ class _PatientTriageFormState extends State<PatientTriageForm> {
               ),
               const SizedBox(height: 24),
               
-              // 0. Choose Profile
+              // 0. Chọn hồ sơ bệnh nhân
               _buildSectionTitle('Thông tin người bệnh'),
               if (_isLoadingProfile)
                  const Center(child: LinearProgressIndicator())
@@ -222,7 +222,7 @@ class _PatientTriageFormState extends State<PatientTriageForm> {
 
               const SizedBox(height: 24),
 
-              // 1. Symptoms
+              // 1. Triệu chứng chính
               _buildSectionTitle('1. Triệu chứng chính *'),
               TextFormField(
                 controller: _symptomsController,
@@ -237,7 +237,7 @@ class _PatientTriageFormState extends State<PatientTriageForm> {
               ),
               const SizedBox(height: 20),
 
-              // 2. Duration
+              // 2. Thời gian mắc bệnh
               _buildSectionTitle('2. Thời gian bị bao lâu?'),
               DropdownButtonFormField<String>(
                 value: _duration,
@@ -250,7 +250,7 @@ class _PatientTriageFormState extends State<PatientTriageForm> {
               ),
               const SizedBox(height: 20),
 
-              // 3. Severity
+              // 3. Mức độ nghiêm trọng
               _buildSectionTitle('3. Mức độ khó chịu (1 - 10)'),
               Row(
                 children: [
@@ -273,7 +273,7 @@ class _PatientTriageFormState extends State<PatientTriageForm> {
               
               const SizedBox(height: 24),
 
-              // 4. Dangerous Signs
+              // 4. Dấu hiệu nguy hiểm
               _buildSectionTitle('4. Dấu hiệu cảnh báo (nếu có)'),
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -298,7 +298,7 @@ class _PatientTriageFormState extends State<PatientTriageForm> {
 
               const SizedBox(height: 24),
 
-              // 5. Desired Time
+              // 5. Thời gian mong muốn khám
               _buildSectionTitle('5. Mong muốn khám lúc'),
               Container(
                 decoration: BoxDecoration(

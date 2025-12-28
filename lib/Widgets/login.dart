@@ -19,7 +19,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
-  UserRole _selectedRole = UserRole.patient; // State for selected role
+  UserRole _selectedRole = UserRole.patient; // Mặc định chọn Bệnh nhân
 
   @override
   void dispose() {
@@ -148,33 +148,33 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text(
-                  'Welcome Back',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
+                  const Text(
+                    'Chào Mừng Trở Lại',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Log in to continue to your account',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 16,
+                  const Text(
+                    'Đăng nhập để tiếp tục sử dụng dịch vụ',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 16,
+                    ),
                   ),
-                ),
                 const SizedBox(height: 40),
-                const Text('Email Address', style: TextStyle(color: Colors.grey)),
+                const Text('Địa chỉ Email', style: TextStyle(color: Colors.grey)),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    hintText: 'you@example.com',
+                    hintText: 'email@vidu.com',
                     hintStyle: TextStyle(color: Colors.grey.shade600),
                     filled: true,
                     fillColor: const Color(0xFF172A46),
@@ -188,11 +188,11 @@ class _LoginPageState extends State<LoginPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Password', style: TextStyle(color: Colors.grey)),
+                    const Text('Mật khẩu', style: TextStyle(color: Colors.grey)),
                     GestureDetector(
                       onTap: _handleForgotPassword,
                       child: const Text(
-                        'Forgot Password?',
+                        'Quên mật khẩu?',
                         style: TextStyle(color: Colors.blue),
                       ),
                     ),
@@ -204,7 +204,7 @@ class _LoginPageState extends State<LoginPage> {
                   obscureText: !_isPasswordVisible,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    hintText: 'Enter your password',
+                    hintText: 'Nhập mật khẩu của bạn',
                     hintStyle: TextStyle(color: Colors.grey.shade600),
                     filled: true,
                     fillColor: const Color(0xFF172A46),
@@ -226,16 +226,16 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text('I am a:', style: TextStyle(color: Colors.grey)),
+                const Text('Bạn là:', style: TextStyle(color: Colors.grey)),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 10,
                   runSpacing: 10,
                   children: [
-                    SizedBox(width: 100, child: _buildRoleButton(UserRole.patient, 'Patient', FontAwesomeIcons.user)),
-                    SizedBox(width: 100, child: _buildRoleButton(UserRole.doctor, 'Doctor', FontAwesomeIcons.userDoctor)),
-                    SizedBox(width: 110, child: _buildRoleButton(UserRole.pharmacy, 'Pharmacy', FontAwesomeIcons.pills)),
-                    SizedBox(width: 110, child: _buildRoleButton(UserRole.receptionist, 'Reception', FontAwesomeIcons.conciergeBell)),
+                    SizedBox(width: 100, child: _buildRoleButton(UserRole.patient, 'Bệnh nhân', FontAwesomeIcons.user)),
+                    SizedBox(width: 100, child: _buildRoleButton(UserRole.doctor, 'Bác sĩ', FontAwesomeIcons.userDoctor)),
+                    SizedBox(width: 110, child: _buildRoleButton(UserRole.pharmacy, 'Dược sĩ', FontAwesomeIcons.pills)),
+                    SizedBox(width: 110, child: _buildRoleButton(UserRole.receptionist, 'Lễ tân', FontAwesomeIcons.conciergeBell)),
                   ],
                 ),
                 const SizedBox(height: 32),
@@ -249,7 +249,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   child: const Text(
-                    'Login',
+                    'Đăng Nhập',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 ),
@@ -258,13 +258,13 @@ class _LoginPageState extends State<LoginPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      "Don't have an account? ",
+                      "Chưa có tài khoản? ",
                       style: TextStyle(color: Colors.grey),
                     ),
                     GestureDetector(
                       onTap: _handleRegister,
                       child: const Text(
-                        'Sign Up',
+                        'Đăng Ký Ngay',
                         style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
                       ),
                     ),

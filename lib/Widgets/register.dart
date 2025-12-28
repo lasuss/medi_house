@@ -118,7 +118,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 const Icon(Icons.shield_outlined, color: Colors.blue, size: 40),
                 const SizedBox(height: 16),
                 const Text(
-                  'Welcome',
+                  'Đăng Ký Tài Khoản',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
@@ -128,21 +128,21 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Register a new account',
+                  'Tạo tài khoản mới để bắt đầu',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey, fontSize: 16),
                 ),
                 const SizedBox(height: 40),
 
                 // Form Fields
-                _buildTextField('Email Address', _emailController, hint: 'you@example.com'),
+                _buildTextField('Địa chỉ Email', _emailController, hint: 'email@vidu.com'),
                 const SizedBox(height: 16),
-                _buildTextField('Full Name', _nameController, hint: 'Nguyen Van A'),
+                _buildTextField('Họ và Tên', _nameController, hint: 'Nguyễn Văn A'),
                 const SizedBox(height: 16),
                 Row(
                   children: [
                     Expanded(
-                      child: _buildTextField('Day Of Birth', _dobController, hint: 'DD/MM/YYYY'),
+                      child: _buildTextField('Ngày sinh', _dobController, hint: 'DD/MM/YYYY'),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -151,9 +151,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                _buildTextField('Password', _passwordController, hint: 'Enter your password', isPassword: true),
+                _buildTextField('Mật khẩu', _passwordController, hint: 'Nhập mật khẩu', isPassword: true),
                 const SizedBox(height: 16),
-                _buildTextField('Confirm your password', _confirmPasswordController, hint: 'Confirm your password', isPassword: true),
+                _buildTextField('Xác nhận mật khẩu', _confirmPasswordController, hint: 'Nhập lại mật khẩu', isPassword: true),
                 const SizedBox(height: 24),
 
                 const SizedBox(height: 12),
@@ -171,7 +171,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('Register', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                  child: const Text('Đăng Ký', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
                 const SizedBox(height: 24),
 
@@ -179,10 +179,10 @@ class _RegisterPageState extends State<RegisterPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("Already had an account? ", style: TextStyle(color: Colors.grey)),
+                    const Text("Đã có tài khoản? ", style: TextStyle(color: Colors.grey)),
                     GestureDetector(
                       onTap: _handleSignIn,
-                      child: const Text('Sign In', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+                      child: const Text('Đăng Nhập', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
@@ -226,11 +226,11 @@ class _RegisterPageState extends State<RegisterPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Gender', style: TextStyle(color: Colors.grey)),
+        const Text('Giới tính', style: TextStyle(color: Colors.grey)),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           value: _selectedGender,
-          hint: const Text('Gender', style: TextStyle(color: Colors.white70)),
+          hint: const Text('Chọn giới tính', style: TextStyle(color: Colors.white70)),
           dropdownColor: const Color(0xFF172A46),
           style: const TextStyle(color: Colors.white),
           decoration: InputDecoration(
@@ -239,7 +239,7 @@ class _RegisterPageState extends State<RegisterPage> {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
           ),
-          items: ['Male', 'Female', 'Other'].map((String value) {
+          items: ['Nam', 'Nữ', 'Khác'].map((String value) {
             return DropdownMenuItem<String>(
               value: value,
               child: Text(value),

@@ -40,13 +40,13 @@ class _AppShellState extends State<AppShell> {
     // Lấy danh sách các mục điều hướng cho vai trò hiện tại
     final List<NavigationItemConfig> navItems = navigationConfigs[currentUserRole] ?? [];
 
-    // Tự động lấy tiêu đề từ mục điều hướng đang được chọn
+    // Tiêu đề mặc định nếu không tìm thấy cấu hình
     final String title = (navItems.isNotEmpty && widget.currentIndex < navItems.length)
         ? navItems[widget.currentIndex].label
-        : 'MediHouse'; // Một tiêu đề mặc định hợp lý
+        : 'MediHouse';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8), // Một màu nền sáng và sạch sẽ
+      backgroundColor: const Color(0xFFF0F4F8), // Màu nền sáng, sạch sẽ, hiện đại
       appBar: AppBar(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
@@ -64,7 +64,7 @@ class _AppShellState extends State<AppShell> {
           ),
         ),
         title: Text(
-          title, // Sử dụng tiêu đề động
+          title, // Tiêu đề động theo tab
           style: const TextStyle(
             color: Colors.white,
             fontSize: 20,
@@ -141,10 +141,10 @@ class _AppShellState extends State<AppShell> {
       body: SizedBox.expand(
         child: widget.child,
       ),
-      // drawer: const MainDrawer(), // Bạn có thể thêm Drawer ở đây sau
+      // drawer: const MainDrawer(), // Để dành cho việc mở rộng sau này
       bottomNavigationBar: BottomNavigation(
         currentIndex: widget.currentIndex,
-        navItems: navItems, // Truyền danh sách navItems động vào đây
+        navItems: navItems, // Menu điều hướng dưới cùng
       ),
     );
   }
