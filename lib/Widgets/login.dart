@@ -167,14 +167,14 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 40),
-                const Text('Địa chỉ Email', style: TextStyle(color: Color(0xFF2D3748), fontWeight: FontWeight.w500)),
+                const Text('Địa chỉ Gmail', style: TextStyle(color: Color(0xFF2D3748), fontWeight: FontWeight.w500)),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   style: const TextStyle(color: Colors.black87),
                   decoration: InputDecoration(
-                    hintText: 'email@gmail.com',
+                    hintText: 'your@gmail.com',
                     hintStyle: TextStyle(color: Colors.grey.shade400),
                     filled: true,
                     fillColor: Colors.white,
@@ -258,7 +258,7 @@ class _LoginPageState extends State<LoginPage> {
                       children: [
                         Expanded(child: _buildRoleButton(UserRole.pharmacy, 'Nhà thuốc', FontAwesomeIcons.houseMedical)),
                         const SizedBox(width: 12),
-                        Expanded(child: _buildRoleButton(UserRole.receptionist, 'Lễ tân', FontAwesomeIcons.conciergeBell)),
+                        Expanded(child: _buildRoleButton(UserRole.receptionist, 'Lễ tân', FontAwesomeIcons.peopleLine)),
                       ],
                     ),
                   ],

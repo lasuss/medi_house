@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 // Widget chính cho màn hình đặt lịch khám đa bước của bệnh nhân
 class PatientBooking extends StatefulWidget {
@@ -35,6 +37,9 @@ class _PatientBookingState extends State<PatientBooking> {
   List<Map<String, dynamic>> _doctors = [];
   List<Map<String, dynamic>> _profiles = [];
 
+  // Trạng thái quản lý các khung giờ bận
+  Set<String> _busySlots = {};
+
   @override
   // Khởi tạo ban đầu: lấy dữ liệu đặt lịch, hồ sơ và lắng nghe tìm kiếm
   void initState() {
@@ -42,6 +47,7 @@ class _PatientBookingState extends State<PatientBooking> {
     _fetchBookingData();
     _fetchProfiles();
     _searchController.addListener(_onSearchChanged);
+    initializeDateFormatting('vi', null);
   }
 
   @override
@@ -84,6 +90,88 @@ class _PatientBookingState extends State<PatientBooking> {
       setState(() {
         _profiles = List<Map<String, dynamic>>.from(res);
       });
+    }
+  }
+
+  // Lấy danh sách các khung giờ bận cho ngày đã chọn
+  Future<void> _fetchBusySlots() async {
+    if (_doctors.isEmpty) return;
+
+    final startOfDay = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, 0, 0, 0);
+    final endOfDay = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, 23, 59, 59);
+
+    try {
+      // 1. Lấy tất cả lịch hẹn trong ngày đó (bao gồm status để lọc)
+      final res = await supabase
+          .from('appointments')
+          .select('time_slot, doctor_id, status')
+          .gte('date', startOfDay.toIso8601String())
+          .lte('date', endOfDay.toIso8601String());
+      
+      var appointments = List<Map<String, dynamic>>.from(res);
+
+      // Lọc bỏ các lịch đã hủy hoặc từ chối
+      appointments = appointments.where((a) {
+        final status = a['status'] as String?;
+        return status != 'Cancelled' && status != 'Rejected';
+      }).toList();
+      
+      print("Found ${appointments.length} valid appointments for $_selectedDate"); // Debug log
+
+      Set<String> busy = {};
+
+      // 2. Nếu đã chọn bác sĩ cụ thể -> Chỉ lọc theo bác sĩ đó
+      if (_selectedCategory == 'bac_si' && _selectedItem != null) {
+        final doctorId = _selectedItem!['id'];
+        final doctorAppts = appointments.where((a) => a['doctor_id'] == doctorId);
+        busy = doctorAppts.map((a) => a['time_slot'] as String).toSet();
+      } 
+      // 3. Nếu chọn dịch vụ -> Phải kiểm tra 'candidate doctors'
+      else if (_selectedCategory == 'dich_vu' && _selectedItem != null) {
+        // Tìm các bác sĩ có thể làm dịch vụ này
+        final serviceName = _selectedItem!['name'] as String;
+        List<String> candidateIds = _doctors.where((d) {
+           final info = d['doctor_info'] ?? {};
+           final specialty = (info['specialty'] as String?)?.toLowerCase() ?? '';
+           if (specialty == 'general' || specialty == 'đa khoa') return true;
+           return serviceName.toLowerCase().contains(specialty);
+        }).map((d) => d['id'] as String).toList();
+
+        // Fallback nếu không có chuyên khoa phù hợp thì lấy đa khoa
+        if (candidateIds.isEmpty) {
+           candidateIds = _doctors.where((d) {
+             final s = ((d['doctor_info']?['specialty'] as String?) ?? '').toLowerCase();
+             return s == 'general' || s == 'đa khoa';
+           }).map((d) => d['id'] as String).toList();
+        }
+
+        if (candidateIds.isNotEmpty) {
+           // Mảng slots
+           final allSlots = ['08:00', '09:00', '10:00', '11:00', '13:30', '14:30', '15:30', '16:30'];
+           
+           for (var slot in allSlots) {
+             // Đếm số bác sĩ candidate đã bận ở slot này
+             final busyCount = appointments.where((a) => a['time_slot'] == slot && candidateIds.contains(a['doctor_id'])).length;
+             // Nếu tất cả candidate đều bận -> slot này bận
+             if (busyCount >= candidateIds.length) {
+               busy.add(slot);
+             }
+           }
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _busySlots = busy;
+          // Nếu giờ đang chọn bị bận thì bỏ chọn
+          if (_selectedTime != null && _busySlots.contains(_selectedTime)) {
+             _selectedTime = null;
+          }
+        });
+      }
+
+    } catch (e) {
+      debugPrint("Error fetching busy slots: $e");
     }
   }
 
@@ -220,16 +308,25 @@ class _PatientBookingState extends State<PatientBooking> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CalendarDatePicker(
-          initialDate: _selectedDate,
-          firstDate: DateTime.now(),
-          lastDate: DateTime.now().add(const Duration(days: 365)),
-          onDateChanged: (date) {
-            setState(() {
-              _selectedDate = date;
-              _selectedTime = null;
-            });
-          },
+        Localizations(
+          locale: const Locale('vi', 'VN'),
+          delegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          child: CalendarDatePicker(
+            initialDate: _selectedDate,
+            firstDate: DateTime.now(),
+            lastDate: DateTime.now().add(const Duration(days: 365)),
+            onDateChanged: (date) {
+              setState(() {
+                _selectedDate = date;
+                _selectedTime = null;
+              });
+              _fetchBusySlots();
+            },
+          ),
         ),
         const Divider(),
         const Padding(
@@ -243,15 +340,20 @@ class _PatientBookingState extends State<PatientBooking> {
             '08:00', '09:00', '10:00', '11:00',
             '13:30', '14:30', '15:30', '16:30'
           ].map((time) {
+            final isBusy = _busySlots.contains(time);
             final isSelected = _selectedTime == time;
             return ChoiceChip(
               label: Text(time),
               selected: isSelected,
-              onSelected: (selected) {
+              onSelected: isBusy ? null : (selected) {
                 setState(() => _selectedTime = selected ? time : null);
               },
               selectedColor: Colors.blue,
-              labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black),
+              disabledColor: Colors.grey.shade200,
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : (isBusy ? Colors.grey : Colors.black),
+                decoration: isBusy ? TextDecoration.lineThrough : null,
+              ),
             );
           }).toList(),
         ),
@@ -436,6 +538,9 @@ class _PatientBookingState extends State<PatientBooking> {
       String? doctorId;
       if (_selectedCategory == 'bac_si') {
         doctorId = _selectedItem?['id'];
+        
+        // Final check to make sure the slot isn't busy before submitting?
+        // (Optional, UI should handle this mostly)
       } else {
         doctorId = await _findAvailableDoctor(finalDateTime);
         if (doctorId == null) {
@@ -542,6 +647,9 @@ class _PatientBookingState extends State<PatientBooking> {
 
           if (_currentStep < 4) {
             setState(() => _currentStep += 1);
+            if (_currentStep == 2) {
+              _fetchBusySlots();
+            }
           } else {
             _submitBooking();
           }

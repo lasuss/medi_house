@@ -155,7 +155,7 @@ class _PatientProfileState extends State<PatientProfile> {
             icon: Icons.notifications_outlined,
             title: 'Thông báo',
             onTap: () {
-              context.go('/patient/profile/personalize_notification');
+              context.go('/patient/notifications');
             },
           ),
           // Tùy chọn đổi mật khẩu
